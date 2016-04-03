@@ -39,40 +39,39 @@ $(document).ready(function(){
 // Round time controls
   $("#round-time .plus").click(function(){
     var seconds = parseInt($("#round-time #r-seconds").text());
-    seconds = seconds + 1
-    if (seconds < 60){
-      if (seconds < 10){
-        $("#round-time #r-seconds").text("0"+seconds);
-        $("#tseconds").text("0" + seconds);
-        roundSeconds = seconds;
-      }else{
-        $("#round-time #r-seconds").text(seconds);
-        $("#tseconds").text(seconds);
-        roundSeconds = seconds;
-      }
+    seconds = (seconds + 1)%60;
+    if (seconds <= 10){
+      $("#round-time #r-seconds").text("0"+seconds);
+      $("#tseconds").text("0" + seconds);
+      roundSeconds = seconds;
+    }else{
+      $("#round-time #r-seconds").text(seconds);
+      $("#tseconds").text(seconds);
+      roundSeconds = seconds;
     }
   });
 
  $("#round-time .minus").click(function(){
     var seconds = parseInt($("#round-time #r-seconds").text());
-    seconds = seconds - 1;
-    if (seconds > -1){
-      if (seconds < 10){
-        $("#round-time #r-seconds").text("0"+seconds);
-        $("#tseconds").text("0" + seconds);
-        roundSeconds = seconds;
-      }else{
-        $("#round-time #r-seconds").text(seconds);
-        $("#tseconds").text(seconds);
-        roundSeconds = seconds;
-      }
+    seconds = (seconds - 1)%60;
+    if(seconds < 0 ){
+      seconds += 60;
+    }
+    if (seconds <= 10){
+      $("#round-time #r-seconds").text("0"+seconds);
+      $("#tseconds").text("0" + seconds);
+      roundSeconds = seconds;
+    }else{
+      $("#round-time #r-seconds").text(seconds);
+      $("#tseconds").text(seconds);
+      roundSeconds = seconds;
     }
   });
 
 
  $("#round-time .plus-minutes").click(function(){
     var minutes = parseInt($("#round-time #r-minutes").text());
-    minutes = minutes + 1;
+    minutes = (minutes + 1)%60;
     $("#round-time #r-minutes").text(minutes);
     $("#tminutes").text(minutes);
     roundMinutes = minutes;
@@ -80,20 +79,22 @@ $(document).ready(function(){
 
   $("#round-time .minus-minutes").click(function(){
     var minutes = parseInt($("#round-time #r-minutes").text());
-    minutes = minutes - 1;
-    if(minutes > (-1)){
-      $("#round-time #r-minutes").text(minutes)
-      $("#tminutes").text(minutes)};
-      roundMinutes = minutes;
-     });
+    minutes = (minutes - 1)%60;
+    if(minutes < 0 ){
+      minutes += 60;
+    }
+    $("#round-time #r-minutes").text(minutes)
+    $("#tminutes").text(minutes);
+    roundMinutes = minutes;
+  });
 
 //rest controls
  $("#rest .plus").click(function(){
     var seconds = parseInt($("#rest #rt-seconds").text());
-    seconds = seconds +1
+    seconds = (seconds + 1)%60;
     if (seconds < 60){
-      if (seconds < 10){
-    	  $("#rest #rt-seconds").text("0"+seconds);
+      if (seconds <= 10){
+        $("#rest #rt-seconds").text("0"+seconds);
         restSeconds = seconds;
       }else{
         $("#rest #rt-seconds").text(seconds);
@@ -104,33 +105,35 @@ $(document).ready(function(){
 
   $("#rest .minus").click(function(){
     var seconds = parseInt($("#rest #rt-seconds").text());
-    seconds = seconds -1
-      if(seconds >(-1) ){
-        if(seconds < 10){
-    	    $("#rest #rt-seconds").text("0"+seconds);
-          restSeconds = seconds;
-        }else{
-          $("#rest #rt-seconds").text(seconds);
-          restSeconds = seconds;
-        }
-      }
+    seconds = (seconds - 1)%60;
+    if(seconds < 0 ){
+      seconds += 60;
+    }
+    if(seconds <= 10){
+      $("#rest #rt-seconds").text("0"+seconds);
+      restSeconds = seconds;
+    }else{
+      $("#rest #rt-seconds").text(seconds);
+      restSeconds = seconds;
+    }
   });
 
  $("#rest .plus-minutes").click(function(){
    var min = parseInt($("#rest #rt-minutes").text());
-   min = min +1;
+   min = (min + 1)%60;
    $("#rest #rt-minutes").text(min);
    restMinutes = min;
  });
 
  $("#rest .minus-minutes").click(function(){
    var min = parseInt($("#rest #rt-minutes").text());
-   min = min -1;
-    if(min >(-1) ){
-      $("#rest #rt-minutes").text(min);
-      restMinutes = min;
-    }
-  });
+   min = (min -1)%60;
+   if(min < 0 ){
+     min += 60;
+   }
+   $("#rest #rt-minutes").text(min);
+   restMinutes = min;
+ });
 
 
 // mobile controls
@@ -196,16 +199,19 @@ $("#start").click(function(){
 
 //counter functions
 var decreaseSeconds = function() {
-  if((roundSeconds > -1) && (roundSeconds < 10)){
-    roundSeconds -= 1;
-    $("#tseconds").text("0" + roundSeconds);
-  }else if((roundSeconds == 10) && (roundMinutes == 0)){
-    ten.play();
-    roundSeconds -=1;
-    $("#tseconds").text("0"+roundSeconds);
-  }else{
-    roundSeconds -= 1;
-    $("#tseconds").text(roundSeconds);
+  if(roundSeconds > 0){
+    if(roundSeconds <= 10){
+      if((roundSeconds == 10) && (roundMinutes == 0)){
+        ten.play();
+      }
+      roundSeconds -= 1;
+      $("#tseconds").text("0" + roundSeconds);
+    }else{
+      roundSeconds -= 1;
+      $("#tseconds").text(roundSeconds);
+    }
+  }else if(roundSeconds == 0){
+    decreaseMinutes();
   }
 }
 
