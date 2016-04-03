@@ -84,11 +84,12 @@ footer a:hover {
 #round-counter {
   background-color: white;
   height: 325px;
-  width: 800px;
+  min-width: 800px;
   border-radius: 5px;
   padding-right: 10px;
   margin-bottom: 10px;
   text-align: center; 
+  display: inline-block;
 }
 
 #tminutes {
