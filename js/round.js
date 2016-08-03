@@ -20,6 +20,19 @@ $(document).ready(function(){
 //start 10 second prep timer
       p = 10;
 
+  // format seconds correctly
+  (function( $ ) {
+    $.fn.bidigitNumber = function( number ) {
+      number %= 100;
+      if(number < 10){
+        this.text( "0" + number );
+      }else{
+        this.text( number );
+      }
+      return this;
+    };
+  }( jQuery ));
+
   $("#rounds .plus").click(function(){
     var rounds = parseInt($("#total-rounds").text());
     rounds = rounds + 1;
@@ -40,15 +53,9 @@ $(document).ready(function(){
   $("#round-time .plus").click(function(){
     var seconds = parseInt($("#round-time #r-seconds").text());
     seconds = (seconds + 1)%60;
-    if (seconds <= 10){
-      $("#round-time #r-seconds").text("0"+seconds);
-      $("#tseconds").text("0" + seconds);
-      roundSeconds = seconds;
-    }else{
-      $("#round-time #r-seconds").text(seconds);
-      $("#tseconds").text(seconds);
-      roundSeconds = seconds;
-    }
+    $("#round-time #r-seconds").bidigitNumber(seconds);
+    $("#tseconds").bidigitNumber(seconds);
+    roundSeconds = seconds;
   });
 
  $("#round-time .minus").click(function(){
@@ -57,15 +64,9 @@ $(document).ready(function(){
     if(seconds < 0 ){
       seconds += 60;
     }
-    if (seconds <= 10){
-      $("#round-time #r-seconds").text("0"+seconds);
-      $("#tseconds").text("0" + seconds);
-      roundSeconds = seconds;
-    }else{
-      $("#round-time #r-seconds").text(seconds);
-      $("#tseconds").text(seconds);
-      roundSeconds = seconds;
-    }
+    $("#round-time #r-seconds").bidigitNumber(seconds);
+    $("#tseconds").bidigitNumber(seconds);
+    roundSeconds = seconds;
   });
 
 
@@ -93,13 +94,8 @@ $(document).ready(function(){
     var seconds = parseInt($("#rest #rt-seconds").text());
     seconds = (seconds + 1)%60;
     if (seconds < 60){
-      if (seconds <= 10){
-        $("#rest #rt-seconds").text("0"+seconds);
-        restSeconds = seconds;
-      }else{
-        $("#rest #rt-seconds").text(seconds);
-        restSeconds = seconds;
-      }
+      $("#rest #rt-seconds").bidigitNumber(seconds);
+      restSeconds = seconds;
    }
 });
 
@@ -109,13 +105,8 @@ $(document).ready(function(){
     if(seconds < 0 ){
       seconds += 60;
     }
-    if(seconds <= 10){
-      $("#rest #rt-seconds").text("0"+seconds);
-      restSeconds = seconds;
-    }else{
-      $("#rest #rt-seconds").text(seconds);
-      restSeconds = seconds;
-    }
+    $("#rest #rt-seconds").bidigitNumber(seconds);
+    restSeconds = seconds;
   });
 
  $("#rest .plus-minutes").click(function(){
@@ -200,16 +191,11 @@ $("#start").click(function(){
 //counter functions
 var decreaseSeconds = function() {
   if(roundSeconds > 0){
-    if(roundSeconds <= 10){
-      if((roundSeconds == 10) && (roundMinutes == 0)){
-        ten.play();
-      }
-      roundSeconds -= 1;
-      $("#tseconds").text("0" + roundSeconds);
-    }else{
-      roundSeconds -= 1;
-      $("#tseconds").text(roundSeconds);
+    roundSeconds -= 1;
+    if((roundSeconds == 10) && (roundMinutes == 0)){
+      ten.play();
     }
+    $("#tseconds").bidigitNumber(roundSeconds);
   }else if(roundSeconds == 0){
     decreaseMinutes();
   }
@@ -219,7 +205,7 @@ var decreaseMinutes = function (){
   roundMinutes -= 1;
   roundSeconds = 59;
   $("#tminutes").text(roundMinutes);
-  $("#tseconds").text(roundSeconds);
+  $("#tseconds").bidigitNumber(roundSeconds);
 }
 
 var initRest = function () {
@@ -228,11 +214,7 @@ var initRest = function () {
   restTime = true;
   $("#tminutes").text(restMinutes);
   //format seconds correctly
-  if(restSeconds < 10){
-    $("#tseconds").text("0" + restSeconds);
-  }else{
-    $("#tseconds").text(restSeconds);
-  }
+  $("#tseconds").bidigitNumber(restSeconds);
   $("#round-counter").css("background-color","red");
 }
 
@@ -250,17 +232,14 @@ var endTimer = function() {
 
 //rest time
 var rest = function(){
-  if((restSeconds > 0) && (restSeconds <= 10)){
-     restSeconds -= 1;
-     $("#tseconds").text("0" + restSeconds);
-  }else if(restSeconds > 10){
+  if(restSeconds > 0){
     restSeconds -= 1;
-    $("#tseconds").text(restSeconds);
+    $("#tseconds").bidigitNumber(restSeconds);
   }else if((restSeconds == 0) && (restMinutes >0)){
     restMinutes -= 1;
     restSeconds = 59;
     $("#tminutes").text(restMinutes);
-    $("#tseconds").text(restSeconds);
+    $("#tseconds").bidigitNumber(restSeconds);
   }else{
     restTime = false;
     bell.play();
@@ -284,12 +263,8 @@ var timerReset = function(){
       restSeconds = parseInt($("#rest #rt-seconds").text());
       restMinutes = parseInt($("#rest #rt-minutes").text());
     }
-  $("#tminutes").text(roundMinutes);
-    if((roundSeconds > 0) && (roundSeconds < 10)){
-      $("#tseconds").text("0" + roundSeconds);
-    }else{
-      $("#tseconds").text(roundSeconds);
-    }
+    $("#tminutes").text(roundMinutes);
+    $("#tseconds").bidigitNumber(roundSeconds);
     p = 10;
 }
 
@@ -327,34 +302,23 @@ var counter = function(){
   restTime = 0;
     var countdown = setInterval(function(){
       if((totalRounds > 0) && (roundSeconds > 0) && (restTime == 0)){
-        //format seconds correctly
-        if((roundSeconds > -1) && (roundSeconds < 10)){
-          roundSeconds -= 1;
-          $("#tseconds").text("0" + roundSeconds);
-        }else if((roundSeconds == 10) && (roundMinutes == 0)){
+        if((roundSeconds == 10) && (roundMinutes == 0)){
           ten.play();
-          roundSeconds -=1;
-          $("#tseconds").text("0"+roundSeconds);
-        }else{
-          roundSeconds -= 1;
-          $("#tseconds").text(roundSeconds);
         }
+        roundSeconds -= 1;
+        $("#tseconds").bidigitNumber(restSeconds);
       }else if((roundSeconds == 0) && (roundMinutes >0)){
         roundMinutes -= 1;
         roundSeconds = 59;
         $("#tminutes").text(roundMinutes);
-        $("#tseconds").text(roundSeconds);
+        $("#tseconds").bidigitNumber(roundSeconds);
       }else if((roundMinutes == 0) && (roundSeconds == 0) && (restTime == 0) && (totalRounds != 1)){
         gong.play();
         totalRounds -= 1;
         restTime += 1;
         $("#tminutes").text(restMinutes);
         //format seconds correctly
-          if(restSeconds < 10){
-            $("#tseconds").text("0" + restSeconds);
-          }else{
-            $("#tseconds").text(restSeconds);
-          }
+        $("#tseconds").bidigitNumber(restSeconds);
         $("#round-counter").css("background-color","red");
       }else if ((totalRounds >= 1) && (restTime == 1)){
         rest();
