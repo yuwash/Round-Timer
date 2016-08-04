@@ -33,6 +33,31 @@ $(document).ready(function(){
     };
   }( jQuery ));
 
+  var TimeDisplay = function( minutesElement, secondsElement ) {
+    this.minutesElement = minutesElement;
+    this.secondsElement = secondsElement;
+  }
+
+  TimeDisplay.prototype.setMinutes = function( minutes ) {
+    this.minutesElement.bidigitNumber( minutes );
+  }
+
+  TimeDisplay.prototype.setSeconds = function( seconds ) {
+    this.secondsElement.bidigitNumber( seconds );
+  }
+
+  TimeDisplay.prototype.getMinutes = function() {
+    return parseInt(this.minutesElement.text());
+  }
+
+  TimeDisplay.prototype.getSeconds = function() {
+    return parseInt(this.secondsElement.text());
+  }
+
+  var roundTimeDisplay = new TimeDisplay($("#round-time #r-minutes"), $("#round-time #r-seconds"));
+  var restTimeDisplay = new TimeDisplay($("#rest #rt-minutes"), $("#rest #rt-seconds"));
+  var timerTimeDisplay = new TimeDisplay($("#tminutes"), $("#tseconds"));
+
   $("#rounds .plus").click(function(){
     var rounds = parseInt($("#total-rounds").text());
     rounds = rounds + 1;
@@ -51,78 +76,78 @@ $(document).ready(function(){
 
 // Round time controls
   $("#round-time .plus").click(function(){
-    var seconds = parseInt($("#round-time #r-seconds").text());
+    var seconds = roundTimeDisplay.getSeconds();
     seconds = (seconds + 1)%60;
-    $("#round-time #r-seconds").bidigitNumber(seconds);
-    $("#tseconds").bidigitNumber(seconds);
+    roundTimeDisplay.setSeconds(seconds);
+    timerTimeDisplay.setSeconds(seconds);
     roundSeconds = seconds;
   });
 
  $("#round-time .minus").click(function(){
-    var seconds = parseInt($("#round-time #r-seconds").text());
+    var seconds = roundTimeDisplay.getSeconds();
     seconds = (seconds - 1)%60;
     if(seconds < 0 ){
       seconds += 60;
     }
-    $("#round-time #r-seconds").bidigitNumber(seconds);
-    $("#tseconds").bidigitNumber(seconds);
+    roundTimeDisplay.setSeconds(seconds);
+    timerTimeDisplay.setSeconds(seconds);
     roundSeconds = seconds;
   });
 
 
  $("#round-time .plus-minutes").click(function(){
-    var minutes = parseInt($("#round-time #r-minutes").text());
+    var minutes = roundTimeDisplay.getMinutes();
     minutes = (minutes + 1)%60;
-    $("#round-time #r-minutes").text(minutes);
-    $("#tminutes").text(minutes);
+    roundTimeDisplay.setMinutes(minutes);
+    timerTimeDisplay.setMinutes(minutes);
     roundMinutes = minutes;
   });
 
   $("#round-time .minus-minutes").click(function(){
-    var minutes = parseInt($("#round-time #r-minutes").text());
+    var minutes = roundTimeDisplay.getMinutes();
     minutes = (minutes - 1)%60;
     if(minutes < 0 ){
       minutes += 60;
     }
-    $("#round-time #r-minutes").text(minutes)
-    $("#tminutes").text(minutes);
+    roundTimeDisplay.setMinutes(minutes);
+    timerTimeDisplay.setMinutes(minutes);
     roundMinutes = minutes;
   });
 
 //rest controls
  $("#rest .plus").click(function(){
-    var seconds = parseInt($("#rest #rt-seconds").text());
+    var seconds = restTimeDisplay.getSeconds();
     seconds = (seconds + 1)%60;
     if (seconds < 60){
-      $("#rest #rt-seconds").bidigitNumber(seconds);
+      restTimeDisplay.setSeconds(seconds);
       restSeconds = seconds;
    }
 });
 
   $("#rest .minus").click(function(){
-    var seconds = parseInt($("#rest #rt-seconds").text());
+    var seconds = restTimeDisplay.getSeconds();
     seconds = (seconds - 1)%60;
     if(seconds < 0 ){
       seconds += 60;
     }
-    $("#rest #rt-seconds").bidigitNumber(seconds);
+    restTimeDisplay.setSeconds(seconds);
     restSeconds = seconds;
   });
 
  $("#rest .plus-minutes").click(function(){
-   var min = parseInt($("#rest #rt-minutes").text());
+   var min = restTimeDisplay.getMinutes();
    min = (min + 1)%60;
-   $("#rest #rt-minutes").text(min);
+   restTimeDisplay.setMinutes(min);
    restMinutes = min;
  });
 
  $("#rest .minus-minutes").click(function(){
-   var min = parseInt($("#rest #rt-minutes").text());
+   var min = restTimeDisplay.getMinutes();
    min = (min -1)%60;
    if(min < 0 ){
      min += 60;
    }
-   $("#rest #rt-minutes").text(min);
+   restTimeDisplay.setMinutes(min);
    restMinutes = min;
  });
 
@@ -138,14 +163,14 @@ $(".mobile-round-minutes").change(function() {
   var min = parseInt($(this).val());
   roundMinutes = min;
   console.log(roundMinutes);
-  $("#tminutes").text(roundMinutes);
+  timerTimeDisplay.setMinutes(roundMinutes);
 });
 
 $( ".mobile-round-seconds" ).change(function() {
   var seconds = parseInt($(this).val());
   roundSeconds = seconds;
   console.log(roundSeconds);
-  $("#tseconds").text(roundSeconds);
+  timerTimeDisplay.setSeconds(roundSeconds);
 });
 
 $(".mobile-rest-minutes").change(function(){
@@ -195,7 +220,7 @@ var decreaseSeconds = function() {
     if((roundSeconds == 10) && (roundMinutes == 0)){
       ten.play();
     }
-    $("#tseconds").bidigitNumber(roundSeconds);
+    timerTimeDisplay.setSeconds(roundSeconds);
   }else if(roundSeconds == 0){
     decreaseMinutes();
   }
@@ -204,17 +229,16 @@ var decreaseSeconds = function() {
 var decreaseMinutes = function (){
   roundMinutes -= 1;
   roundSeconds = 59;
-  $("#tminutes").text(roundMinutes);
-  $("#tseconds").bidigitNumber(roundSeconds);
+  timerTimeDisplay.setMinutes(roundMinutes);
+  timerTimeDisplay.setSeconds(roundSeconds);
 }
 
 var initRest = function () {
   gong.play();
   totalRounds -= 1;
   restTime = true;
-  $("#tminutes").text(restMinutes);
-  //format seconds correctly
-  $("#tseconds").bidigitNumber(restSeconds);
+  timerTimeDisplay.setMinutes(restMinutes);
+  timerTimeDisplay.setSeconds(restSeconds);
   $("#round-counter").css("background-color","red");
 }
 
@@ -234,12 +258,12 @@ var endTimer = function() {
 var rest = function(){
   if(restSeconds > 0){
     restSeconds -= 1;
-    $("#tseconds").bidigitNumber(restSeconds);
+    timerTimeDisplay.setSeconds(restSeconds);
   }else if((restSeconds == 0) && (restMinutes >0)){
     restMinutes -= 1;
     restSeconds = 59;
-    $("#tminutes").text(restMinutes);
-    $("#tseconds").bidigitNumber(restSeconds);
+    timerTimeDisplay.setMinutes(restMinutes);
+    timerTimeDisplay.setSeconds(restSeconds);
   }else{
     restTime = false;
     bell.play();
@@ -258,13 +282,13 @@ var timerReset = function(){
       totalRounds = $(".mobile-round-count").val();
     }else{
       //reset variables from desktop inputs
-      roundSeconds = parseInt($("#round-time #r-seconds").text());
-      roundMinutes = parseInt($("#round-time #r-minutes").text());
-      restSeconds = parseInt($("#rest #rt-seconds").text());
-      restMinutes = parseInt($("#rest #rt-minutes").text());
+      roundSeconds = roundTimeDisplay.getSeconds();
+      roundMinutes = roundTimeDisplay.getMinutes();
+      restSeconds = restTimeDisplay.getSeconds();
+      restMinutes = restTimeDisplay.getMinutes();
     }
-    $("#tminutes").text(roundMinutes);
-    $("#tseconds").bidigitNumber(roundSeconds);
+    timerTimeDisplay.setMinutes(roundMinutes);
+    timerTimeDisplay.setSeconds(roundSeconds);
     p = 10;
 }
 
@@ -310,15 +334,14 @@ var counter = function(){
       }else if((roundSeconds == 0) && (roundMinutes >0)){
         roundMinutes -= 1;
         roundSeconds = 59;
-        $("#tminutes").text(roundMinutes);
-        $("#tseconds").bidigitNumber(roundSeconds);
+        timerTimeDisplay.setMinutes(roundMinutes);
+        timerTimeDisplay.setSeconds(roundSeconds);
       }else if((roundMinutes == 0) && (roundSeconds == 0) && (restTime == 0) && (totalRounds != 1)){
         gong.play();
         totalRounds -= 1;
         restTime += 1;
-        $("#tminutes").text(restMinutes);
-        //format seconds correctly
-        $("#tseconds").bidigitNumber(restSeconds);
+        timerTimeDisplay.setMinutes(restMinutes);
+        timerTimeDisplay.setSeconds(restSeconds);
         $("#round-counter").css("background-color","red");
       }else if ((totalRounds >= 1) && (restTime == 1)){
         rest();
