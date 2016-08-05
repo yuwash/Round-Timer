@@ -1,11 +1,17 @@
 $(document).ready(function(){
+  "use strict";
   //timer variables
-  var totalRounds = 0,
-      roundMinutes = 0,
-      roundSeconds = 0,
-      restSeconds = 0,
-      restMinutes = 0,
-      resting = false,
+  var INITIAL_STATE = {
+    totalRounds: 0,
+    roundMinutes: 0,
+    roundSeconds: 0,
+    restSeconds: 0,
+    restMinutes: 0,
+//start 10 second prep timer
+    p: 10
+  }
+
+  var resting = false,
 //Main functionality variables
 //set interval functions to null to prevent running on window load
       prep = null,
@@ -16,9 +22,7 @@ $(document).ready(function(){
 //ten seconds left sound
       ten = document.getElementById("ten"),
 //rest begin sound
-      gong = document.getElementById("gong"),
-//start 10 second prep timer
-      p = 10;
+      gong = document.getElementById("gong");
 
   // format seconds correctly
   (function( $ ) {
@@ -61,10 +65,20 @@ $(document).ready(function(){
   /**
    * @param timeDisplays array of TimeDisplays that display the (same) time
    */
-  var DisplayedTime = function( timeDisplays ) {
+  var DisplayedTime = function( timeDisplays, mobileTimeDisplays ) {
     this.timeDisplays = timeDisplays;
-    this.__minutes = timeDisplays[0].getSeconds();
-    this.__seconds = timeDisplays[0].getMinutes();
+    this.mobileTimeDisplays = mobileTimeDisplays || [];
+    this.read();
+  }
+
+  DisplayedTime.prototype.read = function() {
+    if(window.innerWidth <= 600) {
+      this.__minutes = this.mobileTimeDisplays[0].getMinutes();
+      this.__seconds = this.mobileTimeDisplays[0].getSeconds();
+    }else{
+      this.__minutes = this.timeDisplays[0].getMinutes();
+      this.__seconds = this.timeDisplays[0].getSeconds();
+    }
   }
 
   DisplayedTime.prototype.setMinutes = function( minutes ) {
@@ -73,6 +87,9 @@ $(document).ready(function(){
       this.__minutes = minutes;
       for (var i in this.timeDisplays) {
         this.timeDisplays[i].setMinutes(minutes);
+      }
+      for (var i in this.mobileTimeDisplays) {
+        this.mobileTimeDisplays[i].setMinutes(minutes);
       }
     }
   }
@@ -83,6 +100,25 @@ $(document).ready(function(){
       this.__seconds = seconds;
       for (var i in this.timeDisplays) {
         this.timeDisplays[i].setSeconds(seconds);
+      }
+      for (var i in this.mobileTimeDisplays) {
+        this.mobileTimeDisplays[i].setSeconds(seconds);
+      }
+    }
+  }
+
+  DisplayedTime.prototype.pullFrom = function( other ) {
+    // test necessary to prevent infinite reciprocal calls
+    if(other.__seconds != this.__seconds || other.__minutes != this.__minutes) {
+      this.__seconds = other.__seconds;
+      this.__minutes = other.__minutes;
+      for (var i in this.timeDisplays) {
+        this.timeDisplays[i].setSeconds(this.__seconds);
+        this.timeDisplays[i].setMinutes(this.__minutes);
+      }
+      for (var i in this.mobileTimeDisplays) {
+        this.mobileTimeDisplays[i].setSeconds(this.__seconds);
+        this.mobileTimeDisplays[i].setMinutes(this.__minutes);
       }
     }
   }
@@ -148,16 +184,16 @@ $(document).ready(function(){
    */
   var DisplayedCounter = function( displayElement, onChangeFunction ) {
     this.displayElement = displayElement;
-    this.onChangeFunction = onChangeFunction;
-    this.pull();
+    this.onChangeFunction = onChangeFunction || function( n ){};
+    this.read(); // this.__counter initialized here
   }
 
-  DisplayedCounter.prototype.pull = function() {
+  DisplayedCounter.prototype.read = function() {
     this.__counter = parseInt(this.displayElement.text());
     this.onChangeFunction(this.__counter);
   }
 
-  DisplayedCounter.prototype.push = function() {
+  DisplayedCounter.prototype.write = function() {
     this.displayElement.text(this.__counter);
   }
 
@@ -168,20 +204,20 @@ $(document).ready(function(){
   DisplayedCounter.prototype.set = function( counter ) {
     if(this.__counter != counter) {
       this.__counter = counter;
-      this.push();
+      this.write();
       this.onChangeFunction(this.__counter);
     }
   }
 
   DisplayedCounter.prototype.inc = function() {
     this.__counter++;
-    this.push();
+    this.write();
     this.onChangeFunction(this.__counter);
   }
 
   DisplayedCounter.prototype.dec = function() {
     this.__counter--;
-    this.push();
+    this.write();
     this.onChangeFunction(this.__counter);
   }
 
@@ -189,19 +225,21 @@ $(document).ready(function(){
   var restTime = DisplayedTime.getTimeWithNewDisplay($("#rest #rt-minutes"), $("#rest #rt-seconds"));
   var timerTime = DisplayedTime.getTimeWithNewDisplay($("#tminutes"), $("#tseconds"))
 
+  roundTime.mobileTimeDisplays.push(new TimeDisplay($("mobile-round-minutes"), $("mobile-round-seconds")));
+  restTime.mobileTimeDisplays.push(new TimeDisplay($("mobile-rest-minutes"), $("mobile-rest-seconds")));
   roundTime.timeDisplays.push(timerTime.timeDisplays[0]);
 
-  var totalRoundsCounter = new DisplayedCounter($("#total-rounds"), function(n){totalRounds = n;});
-  var roundsCounter = new DisplayedCounter($("#rounds"), function(n){});
-  var prepareTimerCounter = new DisplayedCounter($("#ptimer"), function(n){});
+  var totalRoundsCounter = new DisplayedCounter($("#total-rounds"));
+  var roundsCounter = new DisplayedCounter($("#rounds"));
+  var prepareTimerCounter = new DisplayedCounter($("#ptimer"));
 
   $("#rounds .plus").click(function(){
-    totalRoundsCounter.pull();
+    totalRoundsCounter.read();
     totalRoundsCounter.inc();
   });
 
   $("#rounds .minus").click(function(){
-    totalRoundsCounter.pull();
+    totalRoundsCounter.read();
     if(totalRoundsCounter.get() > 0) {
       totalRoundsCounter.dec();
     }
@@ -210,44 +248,36 @@ $(document).ready(function(){
 // Round time controls
   $("#round-time .plus").click(function(){
     roundTime.incSeconds();
-    roundSeconds = roundTime.getSeconds();
   });
 
  $("#round-time .minus").click(function(){
     roundTime.decSeconds();
-    roundSeconds = roundTime.getSeconds();
   });
 
 
  $("#round-time .plus-minutes").click(function(){
     roundTime.incMinutes();
-    roundMinutes = roundTime.getMinutes();
   });
 
   $("#round-time .minus-minutes").click(function(){
     roundTime.decMinutes();
-    roundMinutes = roundTime.getMinutes();
   });
 
 //rest controls
  $("#rest .plus").click(function(){
    restTime.incSeconds();
-   restSeconds = restTime.getSeconds();
 });
 
   $("#rest .minus").click(function(){
     restTime.decSeconds();
-    restSeconds = restTime.getSeconds();
   });
 
  $("#rest .plus-minutes").click(function(){
    restTime.incMinutes();
-   restMinutes = restTime.getMinutes();
  });
 
  $("#rest .minus-minutes").click(function(){
    restTime.decMinutes();
-   restMinutes = restTime.getMinutes();
  });
 
 
@@ -289,12 +319,12 @@ $("#stop").click(function(){
 });
 
 $("#start").click(function(){
-  if(totalRounds == 0){
+  if(totalRoundsCounter.get() == 0){
     alert("You must set the number of rounds");
   }else{
     $("#start").hide();
     $("#prepare").css("margin-left","0");
-    prepareTimerCounter.set(p);
+    prepareTimerCounter.set(INITIAL_STATE.p);
     var prep = setInterval(function(){
       prepareTimerCounter.dec();
     //start main timer at the end of the prep timer, hide prep timer
@@ -314,9 +344,7 @@ $("#start").click(function(){
 var decreaseSeconds = function() {
   if(timerTime.getTotalSeconds() > 0) {
     timerTime.decSeconds();
-    roundSeconds = timerTime.getSeconds();
-    roundMinutes = timerTime.getMinutes();
-    if((roundSeconds == 10) && (roundMinutes == 0)){
+    if(timerTime.getTotalSeconds() == 10){
       ten.play();
     }
   }
@@ -324,132 +352,59 @@ var decreaseSeconds = function() {
 
 var initRest = function () {
   gong.play();
-  //totalRounds -= 1;
   roundsCounter.dec();
   resting = true;
-  timerTime.setMinutes(restMinutes);
-  timerTime.setSeconds(restSeconds);
+  timerTime.pullFrom(restTime);
   $("#round-counter").css("background-color","red");
 }
 
 var endTimer = function() {
   timerReset();
   alert("Session Over!");
-  //reset totalRounds for low res windows
-  /*
-  if(window.innerWidth <= 600){
-    totalRoundsCounter.set($("#mobile-round-count").val());
-  }else{
-    totalRoundsCounter.pull();
-  }
-  */
   $("#start").show();
 }
 
 //rest time
 var rest = function(){
-  if((restSeconds > 0) || ((restSeconds == 0) && (restMinutes >0))){
-    timerTime.decSeconds();
-    restMinutes = timerTime.getMinutes();
-    restSeconds = timerTime.getSeconds();
-  }else{
-    resting = false;
-    bell.play();
-  }
- }
-//resest all variables
+  timerTime.decSeconds();
+}
+
+var endRest = function(){
+  resting = false;
+  timerTime.pullFrom(roundTime);
+  $("#round-counter").css("background-color","white");
+  bell.play();
+}
+
+//reset all variables
 var timerReset = function(){
   $("#round-counter").css("background-color","white");
-    // reset variables from mobile inputs
-    if(window.innerWidth <= 600 ){
-      roundMinutes  = $(".mobile-round-minutes").val();
-      roundSeconds  = $(".mobile-round-seconds").val();
-      restMinutes = $(".mobile-rest-minutes").val();
-      restSeconds  = $(".mobile-rest-seconds").val();
-      totalRounds = $(".mobile-round-count").val();
-      roundTime.setMinutes(roundMinutes);
-      roundTime.setSeconds(roundSeconds);
-      restTime.setMinutes(restMinutes);
-      restTime.setSeconds(restSeconds);
-      totalRoundsCounter.set(totalRounds);
-    }else{
-      //reset variables from desktop inputs
-      roundSeconds = roundTime.getSeconds();
-      roundMinutes = roundTime.getMinutes();
-      restSeconds = restTime.getSeconds();
-      restMinutes = restTime.getMinutes();
-    }
-    timerTime.setMinutes(roundMinutes);
-    timerTime.setSeconds(roundSeconds);
-    roundsCounter.set(totalRounds);
-    prepareTimerCounter.set(p);
+  roundTime.read();
+  restTime.read();
+  totalRoundsCounter.read();
+  timerTime.pullFrom(roundTime);
+  roundsCounter.set(totalRoundsCounter.get());
 }
 
 var counter = function(){
   var countdown = setInterval(function(){
-    switch(true){
-      case ((roundsCounter.get() > 0) && (roundSeconds > 0) && (!resting)):
-      case ((roundSeconds == 0) && (roundMinutes >0)) :
-        decreaseSeconds();
-      break;
-
-      case ((roundMinutes == 0) && (roundSeconds == 0) && (!resting) && (roundsCounter.get() != 1)):
-        initRest();
-      break;
-
-      case ((roundsCounter.get() >= 1) && (resting)):
+    if(timerTime.getTotalSeconds() > 0) {
+      if(resting){
         rest();
-      break;
-
-      default:
-        clearInterval(countdown);
-        endTimer();
+      }else{
+        decreaseSeconds();
+      }
+    }else if(roundsCounter.get() <= 0){
+      clearInterval(countdown);
+      endTimer();
+    }else if(resting){
+      endRest();
+    }else{
+      initRest();
     }
+
   }, 1000);
 }
-
-/*
-#################################################################
-Counter built using else-if, removed in favor of switch statement
-#################################################################
-var counter = function(){
-  resting = 0;
-    var countdown = setInterval(function(){
-      if((roundsCounter.get() > 0) && (roundSeconds > 0) && (resting == 0)){
-        if((roundSeconds == 10) && (roundMinutes == 0)){
-          ten.play();
-        }
-        roundSeconds -= 1;
-        $("#tseconds").bidigitNumber(restSeconds);
-      }else if((roundSeconds == 0) && (roundMinutes >0)){
-        roundMinutes -= 1;
-        roundSeconds = 59;
-        timerTime.setMinutes(roundMinutes);
-        timerTime.setSeconds(roundSeconds);
-      }else if((roundMinutes == 0) && (roundSeconds == 0) && (resting == 0) && (roundsCounter.get() != 1)){
-        gong.play();
-        roundsCounter.dec();
-        resting += 1;
-        timerTime.setMinutes(restMinutes);
-        timerTime.setSeconds(restSeconds);
-        $("#round-counter").css("background-color","red");
-      }else if ((roundsCounter.get() >= 1) && (resting == 1)){
-        rest();
-       //end of main if statement
-      }else{
-        timerReset();
-        clearInterval(countdown);
-        alert("Session Over!");
-        //reset totalRounds for low res windows
-          if(window.innerWidth <= 600){
-            roundsCounter.set($("#mobile-round-count").val());
-          }else{
-            roundsCounter.get() = parseInt($("#total-rounds").text());
-          }
-        $("#start").show();
-      }
-    },1000);
-}*/
 
 //end
 });
