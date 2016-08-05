@@ -322,51 +322,41 @@ $("#start").click(function(){
   if(totalRoundsCounter.get() == 0){
     alert("You must set the number of rounds");
   }else{
-    $("#start").hide();
-    $("#prepare").css("margin-left","0");
-    prepareTimerCounter.set(INITIAL_STATE.p);
-    var prep = setInterval(function(){
+    initPrep();
+    var prep = setInterval(function () {
       prepareTimerCounter.dec();
-    //start main timer at the end of the prep timer, hide prep timer
-    if(prepareTimerCounter.get() == 0){
-      $("#prepare").css("margin-left","-9999px");
-      clearInterval(prep);
-      bell.play();
-      timerReset();
-      counter();
-    }
-   //prep end
-   }, 1000);
+      //start main timer at the end of the prep timer, hide prep timer
+      if(prepareTimerCounter.get() == 0) {
+        clearInterval(prep);
+      }
+    }, 1000);
+    endPrep();
   }
 });
 
 //counter functions
-var decreaseSeconds = function() {
-  if(timerTime.getTotalSeconds() > 0) {
-    timerTime.decSeconds();
-    if(timerTime.getTotalSeconds() == 10){
-      ten.play();
-    }
-  }
+
+//prepare time
+var initPrep = function () {
+  $("#start").hide();
+  $("#prepare").css("margin-left","0");
+  prepareTimerCounter.set(INITIAL_STATE.p);
 }
 
+var endPrep = function () {
+  $("#prepare").css("margin-left","-9999px");
+  bell.play();
+  timerReset();
+  counter();
+}
+
+//rest time
 var initRest = function () {
   gong.play();
   roundsCounter.dec();
   resting = true;
   timerTime.pullFrom(restTime);
   $("#round-counter").css("background-color","red");
-}
-
-var endTimer = function() {
-  timerReset();
-  alert("Session Over!");
-  $("#start").show();
-}
-
-//rest time
-var rest = function(){
-  timerTime.decSeconds();
 }
 
 var endRest = function(){
@@ -379,20 +369,22 @@ var endRest = function(){
 //reset all variables
 var timerReset = function(){
   $("#round-counter").css("background-color","white");
-  roundTime.read();
-  restTime.read();
-  totalRoundsCounter.read();
   timerTime.pullFrom(roundTime);
   roundsCounter.set(totalRoundsCounter.get());
+}
+
+var endTimer = function() {
+  timerReset();
+  alert("Session Over!");
+  $("#start").show();
 }
 
 var counter = function(){
   var countdown = setInterval(function(){
     if(timerTime.getTotalSeconds() > 0) {
-      if(resting){
-        rest();
-      }else{
-        decreaseSeconds();
+      timerTime.decSeconds();
+      if(!resting && timerTime.getTotalSeconds() == 10){
+        ten.play();
       }
     }else if(roundsCounter.get() <= 0){
       clearInterval(countdown);
