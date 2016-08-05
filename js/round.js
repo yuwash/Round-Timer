@@ -5,7 +5,7 @@ $(document).ready(function(){
       roundSeconds = 0,
       restSeconds = 0,
       restMinutes = 0,
-      restTime = false,
+      resting = false,
 //Main functionality variables
 //set interval functions to null to prevent running on window load
       prep = null,
@@ -33,6 +33,10 @@ $(document).ready(function(){
     };
   }( jQuery ));
 
+  /*
+   * @param minutesElement document element that displays minutes
+   * @param secondsElement document element that displays seconds
+   */
   var TimeDisplay = function( minutesElement, secondsElement ) {
     this.minutesElement = minutesElement;
     this.secondsElement = secondsElement;
@@ -54,134 +58,227 @@ $(document).ready(function(){
     return parseInt(this.secondsElement.text());
   }
 
-  var roundTimeDisplay = new TimeDisplay($("#round-time #r-minutes"), $("#round-time #r-seconds"));
-  var restTimeDisplay = new TimeDisplay($("#rest #rt-minutes"), $("#rest #rt-seconds"));
-  var timerTimeDisplay = new TimeDisplay($("#tminutes"), $("#tseconds"));
+  /**
+   * @param timeDisplays array of TimeDisplays that display the (same) time
+   */
+  var DisplayedTime = function( timeDisplays ) {
+    this.timeDisplays = timeDisplays;
+    this.__minutes = timeDisplays[0].getSeconds();
+    this.__seconds = timeDisplays[0].getMinutes();
+  }
+
+  DisplayedTime.prototype.setMinutes = function( minutes ) {
+    // test necessary to prevent infinite reciprocal calls
+    if(this.__minutes != minutes) {
+      this.__minutes = minutes;
+      for (var i in this.timeDisplays) {
+        this.timeDisplays[i].setMinutes(minutes);
+      }
+    }
+  }
+
+  DisplayedTime.prototype.setSeconds = function( seconds ) {
+    // test necessary to prevent infinite reciprocal calls
+    if(this.__seconds != seconds) {
+      this.__seconds = seconds;
+      for (var i in this.timeDisplays) {
+        this.timeDisplays[i].setSeconds(seconds);
+      }
+    }
+  }
+
+  DisplayedTime.prototype.getMinutes = function() {
+    return this.__minutes;
+  }
+
+  DisplayedTime.prototype.getSeconds = function() {
+    return this.__seconds;
+  }
+
+  DisplayedTime.prototype.getTotalSeconds = function() {
+    return 60 * this.__minutes + this.__seconds;
+  }
+
+  DisplayedTime.prototype.addSeconds = function( secondsToAdd ) {
+    var newSeconds = this.__seconds + secondsToAdd;
+    if(newSeconds >= 60 || newSeconds < 0) {
+      var newMinutes = Math.floor(newSeconds/60);
+      this.setSeconds(newSeconds - 60 * newMinutes);
+      newMinutes += this.__minutes;
+      // XXX hours will be forgotten
+      if(newMinutes >= 60) {
+        newMinutes %= 60;
+      }else if(newMinutes < 0) {
+        var hours = Math.floor(newMinutes/60);
+        newMinutes -= 60 * hours;
+      }
+      this.setMinutes(newMinutes);
+    }else{
+      this.setSeconds(newSeconds);
+    }
+  }
+
+  DisplayedTime.prototype.incSeconds = function() {
+    this.addSeconds(1);
+  }
+
+  DisplayedTime.prototype.incMinutes = function() {
+    // XXX hours will be forgotten
+    this.setMinutes((this.__minutes + 1) % 60);
+  }
+
+  DisplayedTime.prototype.decSeconds = function() {
+    this.addSeconds(-1);
+  }
+
+  DisplayedTime.prototype.decMinutes = function() {
+    // XXX hours will be forgotten
+    this.setMinutes((this.__minutes + 59) % 60);
+  }
+
+  DisplayedTime.getTimeWithNewDisplay = function( minutesElement, secondsElement ) {
+    var display = new TimeDisplay(minutesElement, secondsElement);
+    var time = new DisplayedTime([display]);
+    return time;
+  }
+
+  /**
+   * @param displayElement
+   * @param onChangeFunction
+   */
+  var DisplayedCounter = function( displayElement, onChangeFunction ) {
+    this.displayElement = displayElement;
+    this.onChangeFunction = onChangeFunction;
+    this.pull();
+  }
+
+  DisplayedCounter.prototype.pull = function() {
+    this.__counter = parseInt(this.displayElement.text());
+    this.onChangeFunction(this.__counter);
+  }
+
+  DisplayedCounter.prototype.push = function() {
+    this.displayElement.text(this.__counter);
+  }
+
+  DisplayedCounter.prototype.get = function() {
+    return this.__counter;
+  }
+
+  DisplayedCounter.prototype.set = function( counter ) {
+    if(this.__counter != counter) {
+      this.__counter = counter;
+      this.push();
+      this.onChangeFunction(this.__counter);
+    }
+  }
+
+  DisplayedCounter.prototype.inc = function() {
+    this.__counter++;
+    this.push();
+    this.onChangeFunction(this.__counter);
+  }
+
+  DisplayedCounter.prototype.dec = function() {
+    this.__counter--;
+    this.push();
+    this.onChangeFunction(this.__counter);
+  }
+
+  var roundTime = DisplayedTime.getTimeWithNewDisplay($("#round-time #r-minutes"), $("#round-time #r-seconds"));
+  var restTime = DisplayedTime.getTimeWithNewDisplay($("#rest #rt-minutes"), $("#rest #rt-seconds"));
+  var timerTime = DisplayedTime.getTimeWithNewDisplay($("#tminutes"), $("#tseconds"))
+
+  roundTime.timeDisplays.push(timerTime.timeDisplays[0]);
+
+  var totalRoundsCounter = new DisplayedCounter($("#total-rounds"), function(n){totalRounds = n;});
+  var roundsCounter = new DisplayedCounter($("#rounds"), function(n){});
+  var prepareTimerCounter = new DisplayedCounter($("#ptimer"), function(n){});
 
   $("#rounds .plus").click(function(){
-    var rounds = parseInt($("#total-rounds").text());
-    rounds = rounds + 1;
-    $("#total-rounds").text(rounds);
-    totalRounds = rounds;
-   });
+    totalRoundsCounter.pull();
+    totalRoundsCounter.inc();
+  });
 
   $("#rounds .minus").click(function(){
-    var rounds = parseInt($("#total-rounds").text());
-      if(rounds > 0){
-        rounds = rounds - 1;
-      }
-    $("#total-rounds").text(rounds);
-    totalRounds = rounds;
-    });
+    totalRoundsCounter.pull();
+    if(totalRoundsCounter.get() > 0) {
+      totalRoundsCounter.dec();
+    }
+  });
 
 // Round time controls
   $("#round-time .plus").click(function(){
-    var seconds = roundTimeDisplay.getSeconds();
-    seconds = (seconds + 1)%60;
-    roundTimeDisplay.setSeconds(seconds);
-    timerTimeDisplay.setSeconds(seconds);
-    roundSeconds = seconds;
+    roundTime.incSeconds();
+    roundSeconds = roundTime.getSeconds();
   });
 
  $("#round-time .minus").click(function(){
-    var seconds = roundTimeDisplay.getSeconds();
-    seconds = (seconds - 1)%60;
-    if(seconds < 0 ){
-      seconds += 60;
-    }
-    roundTimeDisplay.setSeconds(seconds);
-    timerTimeDisplay.setSeconds(seconds);
-    roundSeconds = seconds;
+    roundTime.decSeconds();
+    roundSeconds = roundTime.getSeconds();
   });
 
 
  $("#round-time .plus-minutes").click(function(){
-    var minutes = roundTimeDisplay.getMinutes();
-    minutes = (minutes + 1)%60;
-    roundTimeDisplay.setMinutes(minutes);
-    timerTimeDisplay.setMinutes(minutes);
-    roundMinutes = minutes;
+    roundTime.incMinutes();
+    roundMinutes = roundTime.getMinutes();
   });
 
   $("#round-time .minus-minutes").click(function(){
-    var minutes = roundTimeDisplay.getMinutes();
-    minutes = (minutes - 1)%60;
-    if(minutes < 0 ){
-      minutes += 60;
-    }
-    roundTimeDisplay.setMinutes(minutes);
-    timerTimeDisplay.setMinutes(minutes);
-    roundMinutes = minutes;
+    roundTime.decMinutes();
+    roundMinutes = roundTime.getMinutes();
   });
 
 //rest controls
  $("#rest .plus").click(function(){
-    var seconds = restTimeDisplay.getSeconds();
-    seconds = (seconds + 1)%60;
-    if (seconds < 60){
-      restTimeDisplay.setSeconds(seconds);
-      restSeconds = seconds;
-   }
+   restTime.incSeconds();
+   restSeconds = restTime.getSeconds();
 });
 
   $("#rest .minus").click(function(){
-    var seconds = restTimeDisplay.getSeconds();
-    seconds = (seconds - 1)%60;
-    if(seconds < 0 ){
-      seconds += 60;
-    }
-    restTimeDisplay.setSeconds(seconds);
-    restSeconds = seconds;
+    restTime.decSeconds();
+    restSeconds = restTime.getSeconds();
   });
 
  $("#rest .plus-minutes").click(function(){
-   var min = restTimeDisplay.getMinutes();
-   min = (min + 1)%60;
-   restTimeDisplay.setMinutes(min);
-   restMinutes = min;
+   restTime.incMinutes();
+   restMinutes = restTime.getMinutes();
  });
 
  $("#rest .minus-minutes").click(function(){
-   var min = restTimeDisplay.getMinutes();
-   min = (min -1)%60;
-   if(min < 0 ){
-     min += 60;
-   }
-   restTimeDisplay.setMinutes(min);
-   restMinutes = min;
+   restTime.decMinutes();
+   restMinutes = restTime.getMinutes();
  });
 
 
 // mobile controls
 
 $(".mobile-round-count").change(function(){
-  totalRounds = parseInt($(this).val());
+  totalRoundsCounter.set(parseInt($(this).val()));
   console.log(totalRounds)
 });
 
 $(".mobile-round-minutes").change(function() {
-  var min = parseInt($(this).val());
-  roundMinutes = min;
+  roundMinutes = parseInt($(this).val());
+  roundTime.setMinutes(roundMinutes);
   console.log(roundMinutes);
-  timerTimeDisplay.setMinutes(roundMinutes);
 });
 
 $( ".mobile-round-seconds" ).change(function() {
-  var seconds = parseInt($(this).val());
-  roundSeconds = seconds;
+  roundSeconds = parseInt($(this).val());
+  roundTime.setSeconds(roundSeconds);
   console.log(roundSeconds);
-  timerTimeDisplay.setSeconds(roundSeconds);
 });
 
 $(".mobile-rest-minutes").change(function(){
-  var minutes = parseInt($(this).val());
-  restMinutes = minutes;
+  restMinutes = parseInt($(this).val());
+  restTime.setMinutes(restMinutes);
   console.log(restMinutes)
 });
 
 $(".mobile-rest-seconds").change(function(){
-  var seconds = parseInt($(this).val());
-  restSeconds = seconds;
+  restSeconds = parseInt($(this).val());
+  restTime.setSeconds(restSeconds);
   console.log(seconds);
 });
 
@@ -197,15 +294,15 @@ $("#start").click(function(){
   }else{
     $("#start").hide();
     $("#prepare").css("margin-left","0");
-    $("#ptimer").text(p);
+    prepareTimerCounter.set(p);
     var prep = setInterval(function(){
-    p -= 1;
-    $("#ptimer").text(p);
+      prepareTimerCounter.dec();
     //start main timer at the end of the prep timer, hide prep timer
-    if(p == 0){
+    if(prepareTimerCounter.get() == 0){
       $("#prepare").css("margin-left","-9999px");
       clearInterval(prep);
       bell.play();
+      timerReset();
       counter();
     }
    //prep end
@@ -215,30 +312,23 @@ $("#start").click(function(){
 
 //counter functions
 var decreaseSeconds = function() {
-  if(roundSeconds > 0){
-    roundSeconds -= 1;
+  if(timerTime.getTotalSeconds() > 0) {
+    timerTime.decSeconds();
+    roundSeconds = timerTime.getSeconds();
+    roundMinutes = timerTime.getMinutes();
     if((roundSeconds == 10) && (roundMinutes == 0)){
       ten.play();
     }
-    timerTimeDisplay.setSeconds(roundSeconds);
-  }else if(roundSeconds == 0){
-    decreaseMinutes();
   }
-}
-
-var decreaseMinutes = function (){
-  roundMinutes -= 1;
-  roundSeconds = 59;
-  timerTimeDisplay.setMinutes(roundMinutes);
-  timerTimeDisplay.setSeconds(roundSeconds);
 }
 
 var initRest = function () {
   gong.play();
-  totalRounds -= 1;
-  restTime = true;
-  timerTimeDisplay.setMinutes(restMinutes);
-  timerTimeDisplay.setSeconds(restSeconds);
+  //totalRounds -= 1;
+  roundsCounter.dec();
+  resting = true;
+  timerTime.setMinutes(restMinutes);
+  timerTime.setSeconds(restSeconds);
   $("#round-counter").css("background-color","red");
 }
 
@@ -246,28 +336,25 @@ var endTimer = function() {
   timerReset();
   alert("Session Over!");
   //reset totalRounds for low res windows
+  /*
   if(window.innerWidth <= 600){
-    totalRounds=$("#mobile-round-count").val();
+    totalRoundsCounter.set($("#mobile-round-count").val());
   }else{
-    totalRounds = parseInt($("#total-rounds").text());
+    totalRoundsCounter.pull();
   }
+  */
   $("#start").show();
 }
 
 //rest time
 var rest = function(){
-  if(restSeconds > 0){
-    restSeconds -= 1;
-    timerTimeDisplay.setSeconds(restSeconds);
-  }else if((restSeconds == 0) && (restMinutes >0)){
-    restMinutes -= 1;
-    restSeconds = 59;
-    timerTimeDisplay.setMinutes(restMinutes);
-    timerTimeDisplay.setSeconds(restSeconds);
+  if((restSeconds > 0) || ((restSeconds == 0) && (restMinutes >0))){
+    timerTime.decSeconds();
+    restMinutes = timerTime.getMinutes();
+    restSeconds = timerTime.getSeconds();
   }else{
-    restTime = false;
+    resting = false;
     bell.play();
-    timerReset();
   }
  }
 //resest all variables
@@ -280,34 +367,37 @@ var timerReset = function(){
       restMinutes = $(".mobile-rest-minutes").val();
       restSeconds  = $(".mobile-rest-seconds").val();
       totalRounds = $(".mobile-round-count").val();
+      roundTime.setMinutes(roundMinutes);
+      roundTime.setSeconds(roundSeconds);
+      restTime.setMinutes(restMinutes);
+      restTime.setSeconds(restSeconds);
+      totalRoundsCounter.set(totalRounds);
     }else{
       //reset variables from desktop inputs
-      roundSeconds = roundTimeDisplay.getSeconds();
-      roundMinutes = roundTimeDisplay.getMinutes();
-      restSeconds = restTimeDisplay.getSeconds();
-      restMinutes = restTimeDisplay.getMinutes();
+      roundSeconds = roundTime.getSeconds();
+      roundMinutes = roundTime.getMinutes();
+      restSeconds = restTime.getSeconds();
+      restMinutes = restTime.getMinutes();
     }
-    timerTimeDisplay.setMinutes(roundMinutes);
-    timerTimeDisplay.setSeconds(roundSeconds);
-    p = 10;
+    timerTime.setMinutes(roundMinutes);
+    timerTime.setSeconds(roundSeconds);
+    roundsCounter.set(totalRounds);
+    prepareTimerCounter.set(p);
 }
 
 var counter = function(){
   var countdown = setInterval(function(){
     switch(true){
-      case ((totalRounds > 0) && (roundSeconds > 0) && (!restTime)):
+      case ((roundsCounter.get() > 0) && (roundSeconds > 0) && (!resting)):
+      case ((roundSeconds == 0) && (roundMinutes >0)) :
         decreaseSeconds();
       break;
 
-      case ((roundSeconds == 0) && (roundMinutes >0)) :
-        decreaseMinutes();
-      break;
-
-      case ((roundMinutes == 0) && (roundSeconds == 0) && (!restTime) && (totalRounds != 1)):
+      case ((roundMinutes == 0) && (roundSeconds == 0) && (!resting) && (roundsCounter.get() != 1)):
         initRest();
       break;
 
-      case ((totalRounds >= 1) && (restTime)):
+      case ((roundsCounter.get() >= 1) && (resting)):
         rest();
       break;
 
@@ -323,9 +413,9 @@ var counter = function(){
 Counter built using else-if, removed in favor of switch statement
 #################################################################
 var counter = function(){
-  restTime = 0;
+  resting = 0;
     var countdown = setInterval(function(){
-      if((totalRounds > 0) && (roundSeconds > 0) && (restTime == 0)){
+      if((roundsCounter.get() > 0) && (roundSeconds > 0) && (resting == 0)){
         if((roundSeconds == 10) && (roundMinutes == 0)){
           ten.play();
         }
@@ -334,16 +424,16 @@ var counter = function(){
       }else if((roundSeconds == 0) && (roundMinutes >0)){
         roundMinutes -= 1;
         roundSeconds = 59;
-        timerTimeDisplay.setMinutes(roundMinutes);
-        timerTimeDisplay.setSeconds(roundSeconds);
-      }else if((roundMinutes == 0) && (roundSeconds == 0) && (restTime == 0) && (totalRounds != 1)){
+        timerTime.setMinutes(roundMinutes);
+        timerTime.setSeconds(roundSeconds);
+      }else if((roundMinutes == 0) && (roundSeconds == 0) && (resting == 0) && (roundsCounter.get() != 1)){
         gong.play();
-        totalRounds -= 1;
-        restTime += 1;
-        timerTimeDisplay.setMinutes(restMinutes);
-        timerTimeDisplay.setSeconds(restSeconds);
+        roundsCounter.dec();
+        resting += 1;
+        timerTime.setMinutes(restMinutes);
+        timerTime.setSeconds(restSeconds);
         $("#round-counter").css("background-color","red");
-      }else if ((totalRounds >= 1) && (restTime == 1)){
+      }else if ((roundsCounter.get() >= 1) && (resting == 1)){
         rest();
        //end of main if statement
       }else{
@@ -352,9 +442,9 @@ var counter = function(){
         alert("Session Over!");
         //reset totalRounds for low res windows
           if(window.innerWidth <= 600){
-            totalRounds=$("#mobile-round-count").val();
+            roundsCounter.set($("#mobile-round-count").val());
           }else{
-            totalRounds = parseInt($("#total-rounds").text());
+            roundsCounter.get() = parseInt($("#total-rounds").text());
           }
         $("#start").show();
       }
