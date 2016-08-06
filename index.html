@@ -3,6 +3,8 @@
 <head>
   <title>Round Timer | Workout, Boxing, and MMA timer</title>
     <meta name="viewport" content="width=device-width">
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
     <link rel="stylesheet" type="text/css" href="css/round.min.css">
     <link rel="icon" type="image/icp" href="favicon.ico">
     <meta name="description" content="A round timer for use with martial arts, boxing, mma and interval training">
@@ -22,24 +24,20 @@
 </head>
 <body>
 
-  <div class="header">
-    <h1>ROUND TIMER!</h1>
-  </div>
+  <header class="navbar navbar-inverse">
+    <div class="navbar-brand">ROUND TIMER!</div>
+  </header>
 
-  <div class="wrapper">
-    <h3 style="color:white;" id="instructions">White buttons add minutes, black buttons add seconds!</h3>
-    <div id="prepare">
-    <div id="ptimer"></div>
-  </div>
-
-  <div id="round-counter">
-    <div id="time"><div id="tminutes">0</div><span>:</span><div id="tseconds">00</div></div>
-  </div>
+  <div class="container">
+    <p id="instructions" class="row">Triangles change minutes, chevrons change seconds!</p>
+    <div id="round-counter" class="row jumbotron">
+      <h1 class="text-center"><span id="ptimer" class="text"></span><span id="time"><span id="tminutes">00</span><span>:</span><span id="tseconds">00</span></span></h1>
+    </div>
   <!-- BEGIN mobile controls. Used to simplify input on smaller devices -->
-  <ul id="labels">
-    <li id="number-label">
-      <h4>Number of Rounds:</h4>
-      <div class="mobile-select">
+  <ul id="labels" class="row hidden-md hidden-lg">
+    <li id="number-label" class="col-md-4 panel panel-default">
+      <h4 class="panel-heading">Number of Rounds:</h4>
+      <div class="mobile-select panel-body">
         <select class="mobile-round-count">
           <option value="0">0</option>
           <option value="1">1</option>
@@ -56,10 +54,10 @@
       </div>
     </li>
 
-    <li id="length-label">
-      <h4>Round Length:</h4>
+    <li id="length-label" class="col-md-4 panel panel-default">
+      <h4 class="panel-heading">Round Length:</h4>
       <div class="mobile-select">
-        <select class="mobile-round-minutes">
+        <select class="mobile-round-minutes panel-body">
           <option value="0">0</option>
           <option value="1">1</option>
           <option value="2">2</option>
@@ -82,9 +80,9 @@
       </div>
     </li>
 
-    <li id="rest-label">
-    <h4>Rest:</h4>
-    <div class="mobile-select">
+    <li id="rest-label" class="col-md-4 panel panel-default">
+    <h4 class="panel-heading">Rest:</h4>
+    <div class="mobile-select panel-body">
       <select class="mobile-rest-minutes">
         <option value="0">0</option>
     	  <option value="1">1</option>
@@ -111,47 +109,61 @@
  <!-- END mobile input -->
 
 <!-- BEGIN desktop input -->
-<div class="counter-items">
-  <div id="rounds" >
-    <span class="text" id="total-rounds">0</span>
-    <div class="plus"></div>
-    <div class="minus"></div>
-  </div>
+<div class="counter-items row hidden-xs hidden-sm">
+  <div id="rounds" class="col-md-4"><div class="panel panel-success">
+    <div class="panel-heading">Rounds</div>
+    <div class="panel-body">
+      <span class="text" id="remaining-rounds">0</span>
+      <span class="text" id="total-rounds">0</span>
+      <div class="btn-group">
+        <a href="#" class="plus glyphicon glyphicon-triangle-top" title="+1"></a>
+        <a href="#" class="minus glyphicon glyphicon-triangle-bottom" title="-1"></a>
+      </div>
+    </div>
+  </div></div>
 
-  <div id="round-time" >
-    <span id="r-minutes">0</span>:<div id="r-seconds">00</div>
-    <div class="plus"></div>
-    <div class="minus"></div>
-    <div class="plus-minutes" ></div>
-    <div class="minus-minutes"></div>
-  </div>
+  <div id="round-time" class="col-md-4"><div class="panel panel-default">
+    <div class="panel-heading">Round time</div>
+    <div class="panel-body">
+      <span id="r-minutes">00</span>:<span id="r-seconds">00</span>
+      <div class="btn-group">
+        <a href="#" class="plus-minutes glyphicon glyphicon-triangle-top" title="+1 min"></a>
+        <a href="#" class="minus-minutes glyphicon glyphicon-triangle-bottom" title="-1 min"></a>
+        <a href="#" class="plus glyphicon glyphicon-chevron-up" title="+1 sec"></a>
+        <a href="#" class="minus glyphicon glyphicon-chevron-down" title="-1 sec"></a>
+      </div>
+    </div>
+  </div></div>
 
-  <div id="rest" class="text">
-    <span id="rt-minutes">0</span>:<span id="rt-seconds">00</span>
-    <div class="plus"></div>
-    <div class="minus"></div>
-    <div class="plus-minutes"></div>
-    <div class="minus-minutes"></div>
-  </div>
+  <div id="rest" class="col-md-4"><div class="panel panel-warning">
+    <div class="panel-heading">Rest time</div>
+    <div class="panel-body">
+      <span id="rt-minutes">00</span>:<span id="rt-seconds">00</span>
+      <div class="btn-group">
+        <a href="#" class="plus-minutes glyphicon glyphicon-triangle-top" title="+1 min"></a>
+        <a href="#" class="minus-minutes glyphicon glyphicon-triangle-bottom" title="-1 min"></a>
+        <a href="#" class="plus glyphicon glyphicon-chevron-up" title="+1 sec"></a>
+        <a href="#" class="minus glyphicon glyphicon-chevron-down" title="-1 sec"></a>
+      </div>
+    </div>
+  </div></div>
 
 </div>
 <!-- END desktop input -->
-<div id="controls">
-  <div class="control-button" id="start"><span class="text">Start</span></div>
-  <div class="control-button" id="stop"><span class="text">Stop</span></div>
+<div id="controls" class="row btn-group">
+  <a href="#" class="control-button btn btn-primary" id="start">Start</a>
+  <a href="#" class="control-button btn btn-danger" id="stop">Stop</a>
 </div>
 
 <audio id="bell"  autostart="false" src="sounds/bell.mp3" preload="auto" hidden="true">Your browser does not support HTML5 sounds. You will not hear any sounds! Please use <a href="https://www.google.com/intl/en/chrome/browser/">Chrome</a> or <a href="http://www.mozilla.org/en-US/firefox/new/">Firefox</a></audio>
 <audio id="gong" autostart="false" src="sounds/gong.mp3" preload="auto" hidden="true"></audio>
 <audio id="ten" autostart="false" src="sounds/alert.mp3" preload="auto" hidden="true"></audio>
 
-<footer>
-  <p>Created by Michael Ciocca</p>
-  <ul id="sites">
-    <li><a href="http://www.github.com/mciocca">Github</a></li>
-    <li><a href="http://www.michaelciocca.com">Blog</a></li>
-    <li><a href="http://www.twitter.com/mciocca89">Twitter</a></li>
-  </ul>
+<footer class="navbar navbar-default navbar-fixed-bottom">
+  <p class="navbar-text">
+  <b><a href="https://github.com/yuwash/Round-Timer">Round-Timer</a></b>
+  maintained by <a href="https://github.com/yuwash">Yushin Washio</a> based on <a href="https://github.com/mciocca">mciocca</a>/<a href="https://github.com/mciocca/Round-Timer">Round-Timer</a>
+  </p>
 </footer>
 
 </div>

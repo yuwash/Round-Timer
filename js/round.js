@@ -9,9 +9,10 @@ $(document).ready(function(){
     restMinutes: 0,
 //start 10 second prep timer
     p: 10
-  }
+  };
 
   var resting = false,
+      preping = false,
 //Main functionality variables
 //set interval functions to null to prevent running on window load
       prep = null,
@@ -230,7 +231,7 @@ $(document).ready(function(){
   roundTime.timeDisplays.push(timerTime.timeDisplays[0]);
 
   var totalRoundsCounter = new DisplayedCounter($("#total-rounds"));
-  var roundsCounter = new DisplayedCounter($("#rounds"));
+  var roundsCounter = new DisplayedCounter($("#remaining-rounds"));
   var prepareTimerCounter = new DisplayedCounter($("#ptimer"));
 
   $("#rounds .plus").click(function(){
@@ -242,6 +243,8 @@ $(document).ready(function(){
     totalRoundsCounter.read();
     if(totalRoundsCounter.get() > 0) {
       totalRoundsCounter.dec();
+    }else{
+      alert("Rounds can not be negative!");
     }
   });
 
@@ -285,31 +288,27 @@ $(document).ready(function(){
 
 $(".mobile-round-count").change(function(){
   totalRoundsCounter.set(parseInt($(this).val()));
-  console.log(totalRounds)
+  console.log(totalRoundsCounter.get())
 });
 
 $(".mobile-round-minutes").change(function() {
-  roundMinutes = parseInt($(this).val());
-  roundTime.setMinutes(roundMinutes);
-  console.log(roundMinutes);
+  roundTime.setMinutes(parseInt($(this).val()));
+  console.log(roundTime.getMinutes());
 });
 
 $( ".mobile-round-seconds" ).change(function() {
-  roundSeconds = parseInt($(this).val());
-  roundTime.setSeconds(roundSeconds);
-  console.log(roundSeconds);
+  roundTime.setSeconds(parseInt($(this).val()));
+  console.log(roundTime.getSeconds());
 });
 
 $(".mobile-rest-minutes").change(function(){
-  restMinutes = parseInt($(this).val());
-  restTime.setMinutes(restMinutes);
-  console.log(restMinutes)
+  restTime.setMinutes(parseInt($(this).val()));
+  console.log(restTime.getMinutes());
 });
 
 $(".mobile-rest-seconds").change(function(){
-  restSeconds = parseInt($(this).val());
-  restTime.setSeconds(restSeconds);
-  console.log(seconds);
+  restTime.setSeconds(parseInt($(this).val()));
+  console.log(restTime.getSeconds());
 });
 
 
@@ -319,35 +318,30 @@ $("#stop").click(function(){
 });
 
 $("#start").click(function(){
-  if(totalRoundsCounter.get() == 0){
-    alert("You must set the number of rounds");
-  }else{
-    initPrep();
-    var prep = setInterval(function () {
-      prepareTimerCounter.dec();
-      //start main timer at the end of the prep timer, hide prep timer
-      if(prepareTimerCounter.get() == 0) {
-        clearInterval(prep);
-      }
-    }, 1000);
-    endPrep();
-  }
+  counter();
 });
 
 //counter functions
 
 //prepare time
 var initPrep = function () {
-  $("#start").hide();
-  $("#prepare").css("margin-left","0");
+  $("#total-rounds").css("display","none");
+  $("#remaining-rounds").css("display","inline");
+  $("#start").attr("disabled","disabled");
+  $("#ptimer").css("display","inline");
+  $("#time").css("display","none");
+  $("#round-counter").css("background-color","yellow");
+  roundsCounter.set(totalRoundsCounter.get());
   prepareTimerCounter.set(INITIAL_STATE.p);
+  preping = true;
 }
 
+//start main timer at the end of the prep timer, hide prep timer
 var endPrep = function () {
-  $("#prepare").css("margin-left","-9999px");
+  $("#ptimer").css("display","none");
+  $("#time").css("display","inline");
   bell.play();
   timerReset();
-  counter();
 }
 
 //rest time
@@ -355,33 +349,45 @@ var initRest = function () {
   gong.play();
   roundsCounter.dec();
   resting = true;
-  timerTime.pullFrom(restTime);
   $("#round-counter").css("background-color","red");
 }
 
 var endRest = function(){
-  resting = false;
-  timerTime.pullFrom(roundTime);
-  $("#round-counter").css("background-color","white");
+  timerReset();
   bell.play();
 }
 
 //reset all variables
 var timerReset = function(){
-  $("#round-counter").css("background-color","white");
+  $("#round-counter").removeAttr("style");
+  resting = false;
+  preping = false;
   timerTime.pullFrom(roundTime);
-  roundsCounter.set(totalRoundsCounter.get());
 }
 
 var endTimer = function() {
   timerReset();
+  roundsCounter.set(totalRoundsCounter.get());
   alert("Session Over!");
-  $("#start").show();
+  $("#start").removeAttr("disabled");
+  $("#total-rounds").css("display","inline");
+  $("#remaining-rounds").css("display","none");
 }
 
 var counter = function(){
+  if(totalRoundsCounter.get() == 0){
+    alert("You must set the number of rounds");
+    return;
+  }
+  timerReset();
+  initPrep();
   var countdown = setInterval(function(){
-    if(timerTime.getTotalSeconds() > 0) {
+    if(preping){
+      prepareTimerCounter.dec();
+      if(prepareTimerCounter.get() == 0) {
+        endPrep();
+      }
+    }else if(timerTime.getTotalSeconds() > 0) {
       timerTime.decSeconds();
       if(!resting && timerTime.getTotalSeconds() == 10){
         ten.play();
