@@ -42,25 +42,30 @@ $(document).ready(function(){
    * @param minutesElement document element that displays minutes
    * @param secondsElement document element that displays seconds
    */
-  var TimeDisplay = function( minutesElement, secondsElement ) {
+  var TimeDisplay = function( minutesElement, secondsElement, useSelect ) {
     this.minutesElement = minutesElement;
     this.secondsElement = secondsElement;
+    this.useSelect = useSelect == true;
   }
 
   TimeDisplay.prototype.setMinutes = function( minutes ) {
-    this.minutesElement.bidigitNumber( minutes );
+    if(!this.useSelect) {
+      this.minutesElement.bidigitNumber( minutes );
+    }
   }
 
   TimeDisplay.prototype.setSeconds = function( seconds ) {
-    this.secondsElement.bidigitNumber( seconds );
+    if(!this.useSelect) {
+      this.secondsElement.bidigitNumber( seconds );
+    }
   }
 
   TimeDisplay.prototype.getMinutes = function() {
-    return parseInt(this.minutesElement.text());
+    return parseInt(this.useSelect? this.minutesElement.va(): this.minutesElement.text());
   }
 
   TimeDisplay.prototype.getSeconds = function() {
-    return parseInt(this.secondsElement.text());
+    return parseInt(this.useSelect? this.secondsElement.val(): this.minutesElement.text());
   }
 
   /**
@@ -73,7 +78,7 @@ $(document).ready(function(){
   }
 
   DisplayedTime.prototype.read = function() {
-    if(window.innerWidth <= 600) {
+    if(window.innerWidth <= 600 && this.mobileTimeDisplays[0]) {
       this.__minutes = this.mobileTimeDisplays[0].getMinutes();
       this.__seconds = this.mobileTimeDisplays[0].getSeconds();
     }else{
@@ -173,10 +178,13 @@ $(document).ready(function(){
     this.setMinutes((this.__minutes + 59) % 60);
   }
 
-  DisplayedTime.getTimeWithNewDisplay = function( minutesElement, secondsElement ) {
+  DisplayedTime.getTimeWithNewDisplay = function( minutesElement, secondsElement, mobileMinutesElement, mobileSecondsElement ) {
     var display = new TimeDisplay(minutesElement, secondsElement);
-    var time = new DisplayedTime([display]);
-    return time;
+    if(mobileMinutesElement && mobileSecondsElement) {
+      var mobileDisplay = new TimeDisplay(mobileMinutesElement, mobileSecondsElement);
+      return new DisplayedTime([display], [mobileDisplay]);
+    }
+    return new DisplayedTime([display]);
   }
 
   /**
@@ -222,17 +230,21 @@ $(document).ready(function(){
     this.onChangeFunction(this.__counter);
   }
 
-  var roundTime = DisplayedTime.getTimeWithNewDisplay($("#round-time #r-minutes"), $("#round-time #r-seconds"));
-  var restTime = DisplayedTime.getTimeWithNewDisplay($("#rest #rt-minutes"), $("#rest #rt-seconds"));
+  var roundTime = DisplayedTime.getTimeWithNewDisplay($("#round-time #r-minutes"), $("#round-time #r-seconds"), $("#mobile-round-minutes"), $("#mobile-round-seconds"));
+  var restTime = DisplayedTime.getTimeWithNewDisplay($("#rest #rt-minutes"), $("#rest #rt-seconds"), $("#mobile-rest-minutes"), $("#mobile-rest-seconds"));
   var timerTime = DisplayedTime.getTimeWithNewDisplay($("#tminutes"), $("#tseconds"))
 
-  roundTime.mobileTimeDisplays.push(new TimeDisplay($("mobile-round-minutes"), $("mobile-round-seconds")));
-  restTime.mobileTimeDisplays.push(new TimeDisplay($("mobile-rest-minutes"), $("mobile-rest-seconds")));
   roundTime.timeDisplays.push(timerTime.timeDisplays[0]);
 
   var totalRoundsCounter = new DisplayedCounter($("#total-rounds"));
   var roundsCounter = new DisplayedCounter($("#remaining-rounds"));
   var prepareTimerCounter = new DisplayedCounter($("#ptimer"));
+
+  totalRoundsCounter.set(INITIAL_STATE.totalRounds);
+  roundTime.setMinutes(INITIAL_STATE.roundMinutes);
+  roundTime.setSeconds(INITIAL_STATE.roundSeconds);
+  restTime.setMinutes(INITIAL_STATE.restMinutes);
+  restTime.setSeconds(INITIAL_STATE.restSeconds);
 
   $("#rounds .plus").click(function(){
     totalRoundsCounter.read();
