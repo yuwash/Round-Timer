@@ -8,10 +8,10 @@ A generic timer for recurring rounds for your web browser (javascript) with acou
 * fixed display formatting bugs
 * reduced code duplications
 * get rid of custom css and use [bootstrap](http://getbootstrap.com) (responsive!)
+* option to turn off preparation time
 
 ## Ideas for future changes
 
-* option to turn off preparation time
 * direct textual input of round numbers and times
 
 ## Contribution

@@ -8,11 +8,13 @@ $(document).ready(function(){
     restSeconds: 0,
     restMinutes: 0,
 //start 10 second prep timer
-    p: 10
+    p: 10,
+    doPrepare: true
   };
 
   var resting = false,
       preping = false,
+      doPrepare = INITIAL_STATE.doPrepare,
 //Main functionality variables
 //set interval functions to null to prevent running on window load
       prep = null,
@@ -333,6 +335,10 @@ $("#start").click(function(){
   counter();
 });
 
+$("#prepare-toggle").change(function(){
+  doPrepare = $("#prepare-toggle").prop("checked");
+})
+
 //counter functions
 
 //prepare time
@@ -344,8 +350,12 @@ var initPrep = function () {
   $("#time").css("display","none");
   $("#round-counter").css("background-color","yellow");
   roundsCounter.set(totalRoundsCounter.get());
-  prepareTimerCounter.set(INITIAL_STATE.p);
-  preping = true;
+  if(doPrepare) {
+    prepareTimerCounter.set(INITIAL_STATE.p);
+    preping = true;
+  } else {
+    endPrep();
+  }
 }
 
 //start main timer at the end of the prep timer, hide prep timer

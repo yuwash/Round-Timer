@@ -1,3 +1,7 @@
+#wrapper {
+  margin-bottom: 4em; /* so that fixed footer doesn't overlap */
+}
+
 /* counting buttons for desktop input */
 .counter-items .btn-group {
   float: right;
@@ -15,4 +19,10 @@
 }
 #remaining-rounds {
   display: none;
+}
+
+/* control buttons */
+#controls input, #controls label {
+  margin-top: 0;
+  margin-bottom: 0;
 }
