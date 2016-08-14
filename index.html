@@ -32,6 +32,10 @@
     <p id="instructions" class="row">Triangles change minutes, chevrons change seconds!</p>
     <div id="round-counter" class="row jumbotron">
       <h1 class="text-center"><span id="ptimer" class="text"></span><span id="time"><span id="tminutes">00</span><span>:</span><span id="tseconds">00</span></span></h1>
+      <div class="progress">
+        <div id="total-elapsed-progress" aria-valuenow="0" style="width: 0%" aria-valuemax="100" aria-valuemin="0" role="progressbar" class="progress-bar"><span class="minutes">00</span>:<span class="seconds">00</span> elapsed</div>
+        <div id="total-left-progress" aria-valuenow="100" class="progress-bar progress-bar-info" style="width: 100%" aria-valuemax="100" aria-valuemin="0"><span class="minutes">00</span>:<span class="seconds">00</span> left</div>
+      </div>
     </div>
   <!-- BEGIN mobile controls. Used to simplify input on smaller devices -->
   <ul id="labels" class="row list-group hidden-md hidden-lg">

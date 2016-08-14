@@ -9,12 +9,17 @@ $(document).ready(function(){
     restMinutes: 0,
 //start 10 second prep timer
     p: 10,
-    doPrepare: true
+    doPrepare: true,
+    progressWriteFreq: 2
   };
 
   var resting = false,
       preping = false,
+      sleeping = true,
       doPrepare = INITIAL_STATE.doPrepare,
+      totalSeconds = 0,
+      totalElapsedSeconds = 0,
+      progressWriteFreq = INITIAL_STATE.progressWriteFreq,
 //Main functionality variables
 //set interval functions to null to prevent running on window load
       prep = null,
@@ -26,6 +31,17 @@ $(document).ready(function(){
       ten = document.getElementById("ten"),
 //rest begin sound
       gong = document.getElementById("gong");
+
+  var getElapsedProgress = function() {
+    if(totalSeconds == 0) {
+      return 0;
+    }
+    return Math.floor(100 * totalElapsedSeconds / totalSeconds);
+  };
+
+  var getLeftProgress = function() {
+    return 100 - getElapsedProgress();
+  };
 
   // format seconds correctly
   (function( $ ) {
@@ -43,51 +59,59 @@ $(document).ready(function(){
   /*
    * @param minutesElement document element that displays minutes
    * @param secondsElement document element that displays seconds
+   * @param useSelect      display elements are select elements (otherwise textual)
    */
   var TimeDisplay = function( minutesElement, secondsElement, useSelect ) {
     this.minutesElement = minutesElement;
     this.secondsElement = secondsElement;
     this.useSelect = useSelect == true;
-  }
+  };
 
   TimeDisplay.prototype.setMinutes = function( minutes ) {
     if(!this.useSelect) {
       this.minutesElement.bidigitNumber( minutes );
     }
-  }
+  };
 
   TimeDisplay.prototype.setSeconds = function( seconds ) {
     if(!this.useSelect) {
       this.secondsElement.bidigitNumber( seconds );
     }
-  }
+  };
 
   TimeDisplay.prototype.getMinutes = function() {
     return parseInt(this.useSelect? this.minutesElement.va(): this.minutesElement.text());
-  }
+  };
 
   TimeDisplay.prototype.getSeconds = function() {
     return parseInt(this.useSelect? this.secondsElement.val(): this.minutesElement.text());
-  }
+  };
 
   /**
    * @param timeDisplays array of TimeDisplays that display the (same) time
+   * @param onChangeFunction function with parameters minutes, seconds to call whenever time changes
    */
-  var DisplayedTime = function( timeDisplays, mobileTimeDisplays ) {
+  var DisplayedTime = function( timeDisplays, mobileTimeDisplays, onChangeFunction ) {
     this.timeDisplays = timeDisplays;
     this.mobileTimeDisplays = mobileTimeDisplays || [];
+    this.onChangeFunction = onChangeFunction || function( m, s ){};
     this.read();
-  }
+  };
 
   DisplayedTime.prototype.read = function() {
     if(window.innerWidth <= 600 && this.mobileTimeDisplays[0]) {
-      this.__minutes = this.mobileTimeDisplays[0].getMinutes();
-      this.__seconds = this.mobileTimeDisplays[0].getSeconds();
+      var newMinutes = this.mobileTimeDisplays[0].getMinutes();
+      var newSeconds = this.mobileTimeDisplays[0].getSeconds();
     }else{
-      this.__minutes = this.timeDisplays[0].getMinutes();
-      this.__seconds = this.timeDisplays[0].getSeconds();
+      var newMinutes = this.timeDisplays[0].getMinutes();
+      var newSeconds = this.timeDisplays[0].getSeconds();
     }
-  }
+    if(this.__minutes != newMinutes || this.__seconds != newSeconds) {
+      this.__minutes = newMinutes;
+      this.__seconds = newSeconds;
+      this.onChangeFunction(this.__minutes, this.__seconds);
+    }
+  };
 
   DisplayedTime.prototype.setMinutes = function( minutes ) {
     // test necessary to prevent infinite reciprocal calls
@@ -99,8 +123,9 @@ $(document).ready(function(){
       for (var i in this.mobileTimeDisplays) {
         this.mobileTimeDisplays[i].setMinutes(minutes);
       }
+      this.onChangeFunction(this.__minutes, this.__seconds);
     }
-  }
+  };
 
   DisplayedTime.prototype.setSeconds = function( seconds ) {
     // test necessary to prevent infinite reciprocal calls
@@ -112,8 +137,9 @@ $(document).ready(function(){
       for (var i in this.mobileTimeDisplays) {
         this.mobileTimeDisplays[i].setSeconds(seconds);
       }
+      this.onChangeFunction(this.__minutes, this.__seconds);
     }
-  }
+  };
 
   DisplayedTime.prototype.pullFrom = function( other ) {
     // test necessary to prevent infinite reciprocal calls
@@ -128,20 +154,21 @@ $(document).ready(function(){
         this.mobileTimeDisplays[i].setSeconds(this.__seconds);
         this.mobileTimeDisplays[i].setMinutes(this.__minutes);
       }
+      this.onChangeFunction(this.__minutes, this.__seconds);
     }
-  }
+  };
 
   DisplayedTime.prototype.getMinutes = function() {
     return this.__minutes;
-  }
+  };
 
   DisplayedTime.prototype.getSeconds = function() {
     return this.__seconds;
-  }
+  };
 
   DisplayedTime.prototype.getTotalSeconds = function() {
     return 60 * this.__minutes + this.__seconds;
-  }
+  };
 
   DisplayedTime.prototype.addSeconds = function( secondsToAdd ) {
     var newSeconds = this.__seconds + secondsToAdd;
@@ -160,57 +187,60 @@ $(document).ready(function(){
     }else{
       this.setSeconds(newSeconds);
     }
-  }
+  };
 
   DisplayedTime.prototype.incSeconds = function() {
     this.addSeconds(1);
-  }
+  };
 
   DisplayedTime.prototype.incMinutes = function() {
     // XXX hours will be forgotten
     this.setMinutes((this.__minutes + 1) % 60);
-  }
+  };
 
   DisplayedTime.prototype.decSeconds = function() {
     this.addSeconds(-1);
-  }
+  };
 
   DisplayedTime.prototype.decMinutes = function() {
     // XXX hours will be forgotten
     this.setMinutes((this.__minutes + 59) % 60);
-  }
+  };
 
-  DisplayedTime.getTimeWithNewDisplay = function( minutesElement, secondsElement, mobileMinutesElement, mobileSecondsElement ) {
+  DisplayedTime.getTimeWithNewDisplay = function( minutesElement, secondsElement, mobileMinutesElement, mobileSecondsElement, onChangeFunction ) {
     var display = new TimeDisplay(minutesElement, secondsElement);
     if(mobileMinutesElement && mobileSecondsElement) {
-      var mobileDisplay = new TimeDisplay(mobileMinutesElement, mobileSecondsElement);
-      return new DisplayedTime([display], [mobileDisplay]);
+      var mobileDisplay = new TimeDisplay(mobileMinutesElement, mobileSecondsElement, true);
+      return new DisplayedTime([display], [mobileDisplay], onChangeFunction);
     }
-    return new DisplayedTime([display]);
-  }
+    return new DisplayedTime([display], [], onChangeFunction);
+  };
 
   /**
-   * @param displayElement
-   * @param onChangeFunction
+   * @param displayElement   the textual document element to display the counter value
+   * @param onChangeFunction function with parameter counter value to call whenever counter value changes
    */
   var DisplayedCounter = function( displayElement, onChangeFunction ) {
     this.displayElement = displayElement;
     this.onChangeFunction = onChangeFunction || function( n ){};
     this.read(); // this.__counter initialized here
-  }
+  };
 
   DisplayedCounter.prototype.read = function() {
-    this.__counter = parseInt(this.displayElement.text());
-    this.onChangeFunction(this.__counter);
-  }
+    var newCounter = parseInt(this.displayElement.text());
+    if(this.__counter != newCounter) {
+      this.__counter = newCounter;
+      this.onChangeFunction(this.__counter);
+    }
+  };
 
   DisplayedCounter.prototype.write = function() {
     this.displayElement.text(this.__counter);
-  }
+  };
 
   DisplayedCounter.prototype.get = function() {
     return this.__counter;
-  }
+  };
 
   DisplayedCounter.prototype.set = function( counter ) {
     if(this.__counter != counter) {
@@ -218,29 +248,99 @@ $(document).ready(function(){
       this.write();
       this.onChangeFunction(this.__counter);
     }
-  }
+  };
 
   DisplayedCounter.prototype.inc = function() {
     this.__counter++;
     this.write();
     this.onChangeFunction(this.__counter);
-  }
+  };
 
   DisplayedCounter.prototype.dec = function() {
     this.__counter--;
     this.write();
     this.onChangeFunction(this.__counter);
-  }
+  };
+
+  /**
+   * @param minutesElement document element that displays minutes
+   * @param secondsElement document element that displays seconds
+   * @param barElement     document element acting as progress bar
+   * @param getProgress    function without parameters to get progress percentage
+   */
+  var ProgressDisplay = function( minutesElement, secondsElement, barElement, getProgress ) {
+    TimeDisplay.call(this, minutesElement, secondsElement, false); // no useSelect
+    this.barElement = barElement;
+    this.getProgress = getProgress || function() { return 0; };
+  };
+
+  ProgressDisplay.prototype = Object.create(TimeDisplay.prototype);
+  ProgressDisplay.prototype.constructor = ProgressDisplay;
+
+  ProgressDisplay.prototype.setMinutes = function( minutes ) {
+    TimeDisplay.prototype.setMinutes.call(this, minutes);
+    this.writeProgress();
+  };
+
+  ProgressDisplay.prototype.setSeconds = function( seconds ) {
+    TimeDisplay.prototype.setSeconds.call(this, seconds);
+  };
+
+  ProgressDisplay.prototype.writeProgress = function() {
+    var progress = this.getProgress();
+    this.barElement.css("width", progress + "%");
+    this.barElement.attr("aria-valuenow", progress);
+  };
 
   var roundTime = DisplayedTime.getTimeWithNewDisplay($("#round-time #r-minutes"), $("#round-time #r-seconds"), $("#mobile-round-minutes"), $("#mobile-round-seconds"));
   var restTime = DisplayedTime.getTimeWithNewDisplay($("#rest #rt-minutes"), $("#rest #rt-seconds"), $("#mobile-rest-minutes"), $("#mobile-rest-seconds"));
-  var timerTime = DisplayedTime.getTimeWithNewDisplay($("#tminutes"), $("#tseconds"))
+  var timerTime = DisplayedTime.getTimeWithNewDisplay($("#tminutes"), $("#tseconds"));
 
   roundTime.timeDisplays.push(timerTime.timeDisplays[0]);
 
   var totalRoundsCounter = new DisplayedCounter($("#total-rounds"));
   var roundsCounter = new DisplayedCounter($("#remaining-rounds"));
   var prepareTimerCounter = new DisplayedCounter($("#ptimer"));
+
+  var totalElapsedProgressDisplay = new ProgressDisplay($("#total-elapsed-progress .minutes"), $("#total-elapsed-progress .seconds"), $("#total-elapsed-progress"), getElapsedProgress);
+  var totalLeftProgressDisplay = new ProgressDisplay($("#total-left-progress .minutes"), $("#total-left-progress .seconds"), $("#total-left-progress"), getLeftProgress);
+
+  var updateTotalElapsedSeconds = function() {
+    if(sleeping){
+      totalElapsedSeconds = 0;
+      return;
+    }
+    var round = 1 + totalRoundsCounter.get() - roundsCounter.get(); // current round (not completed)
+    var startedRounds = resting? round - 1: round;
+    var startedRests = round - 1; // no rest in the first round
+    totalElapsedSeconds = startedRounds * roundTime.getTotalSeconds() + startedRests * restTime.getTotalSeconds() - timerTime.getTotalSeconds();
+  };
+
+  // parameters are ignored because more information necessary anyway (only s used for frequency)
+  var progressWrite = function( m, s ) {
+    if(s % progressWriteFreq == 0) {
+      updateTotalElapsedSeconds();
+      var left = totalSeconds - totalElapsedSeconds;
+      var elapsedMinutes = Math.floor(totalElapsedSeconds/60);
+      var leftMinutes = Math.floor(left/60);
+      totalElapsedProgressDisplay.setMinutes(elapsedMinutes);
+      totalElapsedProgressDisplay.setSeconds(totalElapsedSeconds % 60);
+      totalLeftProgressDisplay.setMinutes(leftMinutes);
+      totalLeftProgressDisplay.setSeconds(left % 60);
+    }
+  };
+
+  // parameters are ignored because more information necessary anyway
+  var updateTotalSeconds = function( m, s ) {
+    var totalRounds = totalRoundsCounter.get();
+    var totalRests = Math.max(0, totalRounds - 1);
+    totalSeconds = totalRounds * roundTime.getTotalSeconds() + totalRests * restTime.getTotalSeconds();
+  };
+
+  // can not give at construction because function depends on timerTime resp. roundTime, restTime
+  timerTime.onChangeFunction = progressWrite;
+  roundTime.onChangeFunction = updateTotalSeconds;
+  restTime.onChangeFunction = updateTotalSeconds;
 
   totalRoundsCounter.set(INITIAL_STATE.totalRounds);
   roundTime.setMinutes(INITIAL_STATE.roundMinutes);
@@ -337,7 +437,7 @@ $("#start").click(function(){
 
 $("#prepare-toggle").change(function(){
   doPrepare = $("#prepare-toggle").prop("checked");
-})
+});
 
 //counter functions
 
@@ -356,7 +456,7 @@ var initPrep = function () {
   } else {
     endPrep();
   }
-}
+};
 
 //start main timer at the end of the prep timer, hide prep timer
 var endPrep = function () {
@@ -364,20 +464,21 @@ var endPrep = function () {
   $("#time").css("display","inline");
   bell.play();
   timerReset();
-}
+};
 
 //rest time
 var initRest = function () {
   gong.play();
-  roundsCounter.dec();
   resting = true;
+  roundsCounter.dec();
+  timerTime.pullFrom(restTime);
   $("#round-counter").css("background-color","red");
-}
+};
 
 var endRest = function(){
   timerReset();
   bell.play();
-}
+};
 
 //reset all variables
 var timerReset = function(){
@@ -385,18 +486,21 @@ var timerReset = function(){
   resting = false;
   preping = false;
   timerTime.pullFrom(roundTime);
-}
+  progressWrite(0,0);
+};
 
 var endTimer = function() {
+  gong.play();
   timerReset();
   roundsCounter.set(totalRoundsCounter.get());
   alert("Session Over!");
   $("#start").removeAttr("disabled");
   $("#total-rounds").css("display","inline");
   $("#remaining-rounds").css("display","none");
-}
+};
 
 var counter = function(){
+  sleeping = false;
   if(totalRoundsCounter.get() == 0){
     alert("You must set the number of rounds");
     return;
@@ -414,17 +518,18 @@ var counter = function(){
       if(!resting && timerTime.getTotalSeconds() == 10){
         ten.play();
       }
-    }else if(roundsCounter.get() <= 0){
-      clearInterval(countdown);
-      endTimer();
     }else if(resting){
       endRest();
+    }else if(roundsCounter.get() <= 1){ // 1 is the last round, so no rest
+      sleeping = true; // do before endTimer so progressWrite will show 0
+      clearInterval(countdown);
+      endTimer();
     }else{
       initRest();
     }
 
   }, 1000);
-}
+};
 
 //end
 });
