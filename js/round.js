@@ -341,6 +341,7 @@ $(document).ready(function(){
   timerTime.onChangeFunction = progressWrite;
   roundTime.onChangeFunction = updateTotalSeconds;
   restTime.onChangeFunction = updateTotalSeconds;
+  totalRoundsCounter.onChangeFunction = updateTotalSeconds;
 
   totalRoundsCounter.set(INITIAL_STATE.totalRounds);
   roundTime.setMinutes(INITIAL_STATE.roundMinutes);
