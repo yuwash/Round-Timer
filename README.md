@@ -1,7 +1,7 @@
-Round-Timer
+Versatimer
 ===========
 
-A generic timer for recurring rounds for your web browser (javascript) with acoustic alarms. Based on [mciocca](https://github.com/mciocca)/[Round-Timer](https://github.com/mciocca/Round-Timer).
+A generic timer for recurring rounds for your web browser (javascript) with acoustic alarms. Based on [Round-Timer](https://github.com/mciocca/Round-Timer).
 
 ## Default behavior
 
@@ -24,6 +24,8 @@ At the end of a session, it shows an alert and shows again the total rounds in t
 ## Ideas for future changes
 
 * direct textual input of round numbers and times
+* define more flexible routines
+* select from predefined routines
 
 ## Contribution
 
