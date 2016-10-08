@@ -1,5 +1,5 @@
-$(document).ready(function(){
-  "use strict";
+"use strict";
+
   //timer variables
   var INITIAL_STATE = {
     totalRounds: 0,
@@ -292,6 +292,7 @@ $(document).ready(function(){
     this.barElement.attr("aria-valuenow", progress);
   };
 
+$(document).ready(function(){
   var roundTime = DisplayedTime.getTimeWithNewDisplay($("#round-time #r-minutes"), $("#round-time #r-seconds"), $("#mobile-round-minutes"), $("#mobile-round-seconds"));
   var restTime = DisplayedTime.getTimeWithNewDisplay($("#rest #rt-minutes"), $("#rest #rt-seconds"), $("#mobile-rest-minutes"), $("#mobile-rest-seconds"));
   var timerTime = DisplayedTime.getTimeWithNewDisplay($("#tminutes"), $("#tseconds"));
