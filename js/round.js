@@ -141,6 +141,12 @@
     }
   };
 
+  DisplayedTime.prototype.reset = function() {
+    this.__seconds = 0;
+    this.__minutes = 0;
+    this.onChangeFunction(0,0);
+  }
+
   DisplayedTime.prototype.pullFrom = function( other ) {
     // test necessary to prevent infinite reciprocal calls
     if(other.__seconds != this.__seconds || other.__minutes != this.__minutes) {
@@ -249,6 +255,10 @@
       this.onChangeFunction(this.__counter);
     }
   };
+
+  DisplayedCounter.prototype.reset = function() {
+    this.set(0);
+  }
 
   DisplayedCounter.prototype.inc = function() {
     this.__counter++;
@@ -430,7 +440,14 @@ $(".mobile-rest-seconds").change(function(){
 
 //MAIN FUNCTIONALITY
 $("#stop").click(function(){
-  location.reload();
+  if(preping) {
+    endPrep();
+  }
+  if(resting) {
+    endRest();
+  }
+  roundsCounter.reset();
+  timerTime.reset()
 });
 
 $("#start").click(function(){
@@ -493,7 +510,13 @@ var timerReset = function(){
 
 var endTimer = function() {
   gong.play();
-  timerReset();
+  if(preping) {
+    endPrep();
+  } else if (resting) {
+    endRest();
+  } else {
+    timerReset();
+  }
   roundsCounter.set(totalRoundsCounter.get());
   alert("Session Over!");
   $("#start").removeAttr("disabled");

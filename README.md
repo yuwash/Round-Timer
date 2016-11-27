@@ -20,6 +20,7 @@ At the end of a session, it shows an alert and shows again the total rounds in t
 * reduced code duplications
 * get rid of custom css and use [bootstrap](http://getbootstrap.com) (responsive!)
 * option to turn off preparation time
+* stop button resets the timer cleanly
 
 ## Ideas for future changes
 
