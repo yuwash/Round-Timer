@@ -33,14 +33,11 @@
       gong = document.getElementById("gong");
 
   var getElapsedProgress = function() {
-    if(totalSeconds == 0) {
-      return 0;
-    }
-    return Math.floor(100 * totalElapsedSeconds / totalSeconds);
+    return [totalElapsedSeconds, totalSeconds];
   };
 
   var getLeftProgress = function() {
-    return 100 - getElapsedProgress();
+    return [totalSeconds - totalElapsedSeconds, totalSeconds];
   };
 
   // format seconds correctly
@@ -273,33 +270,31 @@
   };
 
   /**
-   * @param minutesElement document element that displays minutes
-   * @param secondsElement document element that displays seconds
+   * @param durationElement document element that displays the duration
    * @param barElement     document element acting as progress bar
    * @param getProgress    function without parameters to get progress percentage
    */
-  var ProgressDisplay = function( minutesElement, secondsElement, barElement, getProgress ) {
-    TimeDisplay.call(this, minutesElement, secondsElement, false); // no useSelect
+  var ProgressDisplay = function( durationElement, barElement, getProgress ) {
+    this.durationElement = durationElement;
     this.barElement = barElement;
     this.getProgress = getProgress || function() { return 0; };
   };
 
-  ProgressDisplay.prototype = Object.create(TimeDisplay.prototype);
-  ProgressDisplay.prototype.constructor = ProgressDisplay;
-
-  ProgressDisplay.prototype.setMinutes = function( minutes ) {
-    TimeDisplay.prototype.setMinutes.call(this, minutes);
+  ProgressDisplay.prototype.update = function() {
+    var duration_ms = 1000 * this.getProgress()[0];
+    this.durationElement.text(moment.duration(duration_ms).humanize());
     this.writeProgress();
-  };
-
-  ProgressDisplay.prototype.setSeconds = function( seconds ) {
-    TimeDisplay.prototype.setSeconds.call(this, seconds);
   };
 
   ProgressDisplay.prototype.writeProgress = function() {
     var progress = this.getProgress();
-    this.barElement.css("width", progress + "%");
-    this.barElement.attr("aria-valuenow", progress);
+    if (progress[1] == 0) {
+      var progressPercentage = 0;
+    } else {
+      var progressPercentage = Math.floor(100 * progress[0] / progress[1]);
+    }
+    this.barElement.css("width", progressPercentage + "%");
+    this.barElement.attr("aria-valuenow", progressPercentage);
   };
 
 $(document).ready(function(){
@@ -313,8 +308,8 @@ $(document).ready(function(){
   var roundsCounter = new DisplayedCounter($("#remaining-rounds"));
   var prepareTimerCounter = new DisplayedCounter($("#ptimer"));
 
-  var totalElapsedProgressDisplay = new ProgressDisplay($("#total-elapsed-progress .minutes"), $("#total-elapsed-progress .seconds"), $("#total-elapsed-progress"), getElapsedProgress);
-  var totalLeftProgressDisplay = new ProgressDisplay($("#total-left-progress .minutes"), $("#total-left-progress .seconds"), $("#total-left-progress"), getLeftProgress);
+  var totalElapsedProgressDisplay = new ProgressDisplay($("#total-elapsed-progress .duration"), $("#total-elapsed-progress"), getElapsedProgress);
+  var totalLeftProgressDisplay = new ProgressDisplay($("#total-left-progress .duration"), $("#total-left-progress"), getLeftProgress);
 
   var updateTotalElapsedSeconds = function() {
     if(sleeping){
@@ -331,13 +326,8 @@ $(document).ready(function(){
   var progressWrite = function( m, s ) {
     if(s % progressWriteFreq == 0) {
       updateTotalElapsedSeconds();
-      var left = totalSeconds - totalElapsedSeconds;
-      var elapsedMinutes = Math.floor(totalElapsedSeconds/60);
-      var leftMinutes = Math.floor(left/60);
-      totalElapsedProgressDisplay.setMinutes(elapsedMinutes);
-      totalElapsedProgressDisplay.setSeconds(totalElapsedSeconds % 60);
-      totalLeftProgressDisplay.setMinutes(leftMinutes);
-      totalLeftProgressDisplay.setSeconds(left % 60);
+      totalElapsedProgressDisplay.update();
+      totalLeftProgressDisplay.update();
     }
   };
 
