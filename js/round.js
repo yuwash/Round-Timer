@@ -1,4 +1,8 @@
 "use strict";
+const moment = require('moment');
+const $ = require("jquery");
+
+moment().format();
 
   //timer variables
   var INITIAL_STATE = {
@@ -41,7 +45,7 @@
   };
 
   // format seconds correctly
-  (function( $ ) {
+  (function() {
     $.fn.bidigitNumber = function( number ) {
       number %= 100;
       if(number < 10){
@@ -51,7 +55,7 @@
       }
       return this;
     };
-  }( jQuery ));
+  }());
 
   /*
    * @param minutesElement document element that displays minutes
