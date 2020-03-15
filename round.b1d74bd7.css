@@ -1,0 +1,31 @@
+#wrapper {
+  margin-bottom: 6em; /* so that fixed footer doesn't overlap */
+}
+
+/* counting buttons for desktop input */
+.counter-items .btn-group {
+  float: right;
+}
+
+/* timer */
+#time {
+  display: inline;
+}
+#ptimer {
+  display: none;
+}
+#total-rounds {
+  display: inline;
+}
+#remaining-rounds {
+  display: none;
+}
+
+/* control buttons */
+#controls input, #controls label {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+
+/*# sourceMappingURL=/round.b1d74bd7.css.map */
